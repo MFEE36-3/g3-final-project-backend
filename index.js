@@ -85,6 +85,18 @@ app.use((req, res, next) => {
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
 
+// This block is for ecshop
+const ec_orm = require("./models");
+ec_orm.sequelize.sync()
+    .then(() => {
+        console.log("Synced db.");
+    })
+    .catch((err) => {
+        console.log("Failed to sync db: " + err.message);
+    });
+require("./routes/ecshop")(app);
+// End of ecshop
+
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));
 app.get("*", express.static("node_modules/bootstrap/dist"));

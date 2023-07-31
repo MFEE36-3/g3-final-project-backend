@@ -72,7 +72,7 @@ app.use((req, res, next) => {
         let jwtData = null;
         try {
             jwtData = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (ex) {}
+        } catch (ex) { }
         if (jwtData) {
             res.locals.jwtData = jwtData;
             console.log("jwtData", res.locals.jwtData.id);
@@ -84,6 +84,7 @@ app.use((req, res, next) => {
 
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
+app.use('/reservation', require(__dirname + '/routes/reservation'));
 
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));

@@ -84,7 +84,11 @@ app.use((req, res, next) => {
 
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
-
+app.use("/message",require(__dirname + "/routes/message"));
+app.use("/forum2",require(__dirname+"/routes/forum2"))
+app.use("/forum", require(__dirname + "/routes/forum"));
+app.use("/news2",require(__dirname + "/routes/news2"));
+app.use("/news",require(__dirname + "/routes/news1"));
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));
 app.get("*", express.static("node_modules/bootstrap/dist"));

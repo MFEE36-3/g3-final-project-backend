@@ -228,7 +228,7 @@ router.get('/buyforme_detail', async (req, res) => {
     const sql = `SELECT bf.order_sid, ofy.target_store, fit.food_id, fit.food_price
     FROM buy_for_me AS bf
     JOIN open_for_you AS ofy ON bf.open_sid = ofy.open_sid
-    JOIN food_items_try AS fit ON ofy.target_store = fit.shop_id`;
+    JOIN food_items AS fit ON ofy.target_store = fit.shop_id`;
     [buy_array] = await db.query(sql);
 
     const sql2 = `INSERT INTO buy_for_me_detail 

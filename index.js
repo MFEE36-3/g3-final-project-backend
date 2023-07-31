@@ -84,6 +84,8 @@ app.use((req, res, next) => {
 
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
+app.use('/buyforme', require(__dirname + '/routes/buyforme') );
+app.use('/buyforme_fake_data', require(__dirname + '/routes/insert_buyforme_fake_data') );
 
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));

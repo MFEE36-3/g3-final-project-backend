@@ -72,7 +72,7 @@ app.use((req, res, next) => {
         let jwtData = null;
         try {
             jwtData = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (ex) {}
+        } catch (ex) { }
         if (jwtData) {
             res.locals.jwtData = jwtData;
             console.log("jwtData", res.locals.jwtData.id);
@@ -90,8 +90,9 @@ app.post('/previewImg', upload.single('preImg'), async (req, res) => {
 
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
-app.use('/buyforme', require(__dirname + '/routes/buyforme') );
-app.use('/buyforme_fake_data', require(__dirname + '/routes/insert_buyforme_fake_data') );
+app.use('/reservation', require(__dirname + '/routes/reservation'));
+app.use('/buyforme', require(__dirname + '/routes/buyforme'));
+app.use('/buyforme_fake_data', require(__dirname + '/routes/insert_buyforme_fake_data'));
 app.use('/res', require(__dirname + '/routes/res-item'))
 
 // 餐廳管理login
@@ -119,20 +120,20 @@ app.post('/res-login', async (req, res) => {
     if (req.body.password !== rows[0].password) {
         output.error = '帳號或密碼錯誤';
         return res.json(output)
-    }else{
+    } else {
         // 帳號密碼皆正確，發送token
         const token = jwt.sign({
-            id:rows[0].sid,
+            id: rows[0].sid,
             account: rows[0].account
-        },process.env.JWT_SECRET)
+        }, process.env.JWT_SECRET)
 
         output.success = true
         output.token = token
         output.rows = rows
         output.data = {
-            id:rows[0].sid,
+            id: rows[0].sid,
             account: rows[0].account,
-            shop:rows[0].shop,
+            shop: rows[0].shop,
             token
         }
         return res.json(output)

@@ -139,7 +139,7 @@ app.post("/res-login", async (req, res) => {
         return res.json(output)
     }
 })
->>>>>>>>> Temporary merge branch 2
+
 
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));

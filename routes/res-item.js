@@ -3,7 +3,8 @@ const res = require('express/lib/response');
 const router = express.Router();
 const db = require(__dirname + '/../modules/mysql2');
 const dayjs = require('dayjs');
-const upload = require(__dirname + '/../modules/res-img-upload')
+// const upload = require(__dirname + '/../modules/res-img-upload')
+const resUploadImg = require(__dirname + '/../modules/shops-img-upload')
 const multipartParser = upload.none()
 const bcrypt = require('bcryptjs')
 
@@ -141,6 +142,14 @@ const getListDataASC = async (req, shop_id) => {
     return output
 }
 
+// previewResImg 這是餐廳照片Ajax的東西
+router.post("/shopPreviewImg", resUploadImg.single("preImg"), async (req, res) => {
+    // const filename = req.file.filename
+    res.json(req.file);
+    console.log(req.file);
+});
+
+
 router.post('/res-register-form/', multipartParser, async (req, res) => {
     res.send(req.params)
 
@@ -157,6 +166,21 @@ router.post('/res-register-form/', multipartParser, async (req, res) => {
         city = 2
     } else if (req.body.city == '基隆市') {
         city = 3
+    }
+
+    let res_cate;
+    if(req.body.res_cate == '中式'){
+        res_cate = 1
+    }else if(req.body.res_cate == '西式'){
+        res_cate = 2
+    }else if(req.body.res_cate == '日式'){
+        res_cate = 3
+    }else if(req.body.res_cate == '韓式'){
+        res_cate = 4
+    }else if(req.body.res_cate == '美式'){
+        res_cate = 5
+    }else if(req.body.res_cate == '泰式'){
+        res_cate = 6
     }
 
     let area = ''
@@ -290,7 +314,7 @@ router.post('/res-register-form/', multipartParser, async (req, res) => {
             hashPassword,
             req.body.shopname,
             req.body.owner,
-            req.body.res_cate,
+            res_cate,
             req.body.description,
             req.body.avg_consumption,
             req.body.photo,

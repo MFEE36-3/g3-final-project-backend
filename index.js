@@ -81,13 +81,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// previewResImg 這是餐廳照片Ajax的東西
-app.post("/previewImg", upload.single("preImg"), async (req, res) => {
-    // const filename = req.file.filename
-    res.json(req.file);
-    console.log(req.file);
-});
-
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
 app.use('/reservation', require(__dirname + '/routes/reservation'));

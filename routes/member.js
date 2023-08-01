@@ -125,6 +125,7 @@ router.get("/moneyCard", async (req, res) => {
     }
     const sql = `SELECT * FROM member_level_card WHERE 1`;
     const [rows] = await db.query(sql);
+    console.log(rows);
     res.json(rows);
 });
 
@@ -205,7 +206,7 @@ router.get("/coupon", async (req, res) => {
 });
 
 // 拿到會員發文資料的API
-router.get("/article", async (req, res) => {
+router.get("/forumPost", async (req, res) => {
     const output = {
         success: false,
         error: "",
@@ -217,7 +218,7 @@ router.get("/article", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT publishedTime,header,content,category FROM article WHERE user_id = ?`;
+    const sql = `SELECT * FROM forum WHERE user_id = ?`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
@@ -286,6 +287,25 @@ router.post("/changeAchieve", async (req, res) => {
         res.locals.jwtData.id,
     ]);
     res.json(row2);
+});
+
+// 拿到會員收藏店家的API
+router.get("/favoritetStore", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql = `SELECT s.shop AS restaurant_name, s.rating AS restaurant_rating, s.photo AS restaurant_photo, s.location AS restaurant_location FROM favorite f JOIN shops s ON f.shop_id = s.sid WHERE f.id = ?`;
+
+    const [rows] = await db.query(sql, [res.locals.jwtData.id]);
+    res.json(rows);
 });
 
 module.exports = router;

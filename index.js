@@ -84,17 +84,14 @@ app.use((req, res, next) => {
 
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
-<<<<<<< HEAD
 app.use("/message",require(__dirname + "/routes/message"));
 app.use("/forum2",require(__dirname+"/routes/forum2"))
 app.use("/forum", require(__dirname + "/routes/forum"));
 app.use("/news2",require(__dirname + "/routes/news2"));
 app.use("/news",require(__dirname + "/routes/news1"));
-=======
 app.use('/buyforme', require(__dirname + '/routes/buyforme') );
 app.use('/buyforme_fake_data', require(__dirname + '/routes/insert_buyforme_fake_data') );
 
->>>>>>> main
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));
 app.get("*", express.static("node_modules/bootstrap/dist"));

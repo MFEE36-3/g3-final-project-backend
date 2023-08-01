@@ -32,6 +32,7 @@ router.get("/forum/:forum_sid", async (req, res) => {
   WHERE m.forum_sid = ${forum_sid}`;
   const [messageData] = await db.query(message_sql);
 
+  
   // 合併論壇資料和留言資料到 output 物件
   const output = {
     forum_data: forum_data,

@@ -6,6 +6,7 @@ const upload = require(__dirname + "/../modules/img-upload");
 const multipartParser = upload.none();
 
 router.get("/", async (req, res) => {
+ 
   const sql = `
     SELECT 
         m.message_sid,
@@ -31,14 +32,35 @@ router.get("/", async (req, res) => {
     WHERE 1;
   `;
   
-  try {
-    const [messages] = await db.query(sql);
-    console.log(messages);
-    return res.json(messages);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  const [messages] = await db.query(sql);
+
+  // try {
+  //   const [messages] = await db.query(sql);
+  //   console.log(messages);
+  //   return res.json(messages);
+  // } catch (error) {
+  //   console.error("Error fetching data:", error);
+  //   return res.status(500).json({ error: "Internal server error" });
+  // }
+
+  let searchResult=[]
+  const keyword = req.query.forum_keyword;
+  if (keyword) {
+    const kw_escaped = db.escape("%" + keyword + "%");
+    const searchSql = `
+      SELECT * FROM forum
+      WHERE header LIKE ${kw_escaped}
+      OR content LIKE ${kw_escaped}
+    `;
+    const [searchResult] = await db.query(searchSql);
+    // console.log(searchResult);
+    // return res.json(searchResult);
+  } 
+  // else {
+  //   return res.json(result);
+  // }
+
+  res.json({messages})
 });
 
 module.exports = router;

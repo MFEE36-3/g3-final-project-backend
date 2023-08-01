@@ -46,10 +46,6 @@ const getListData = async (req) => {
   return output;
 }
 
-const getListData1 = async (req) => {
-  // ...略
-}
-
 router.get("/demo", async (req, res) => {
   const output = await getListData(req);
   console.log(output);

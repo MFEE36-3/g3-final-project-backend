@@ -122,39 +122,33 @@ router.get('/review', async (req, res) => {
 
 
 router.post('/openforyou', async (req, res) => {
+
     // TODO: 檢查資料格式
 
-    //const { name, email, mobile, birthday, address } = req.body;
+    const { open_member_id, meet_date, meet_hour, meet_place, target_store, tip, open_status } = req.body;
 
-    // let birthday_djs = dayjs(birthday);
-    // if (birthday_djs.isValid()) {
-    //     birthday_djs = birthday_djs.format('YYYY-MM-DD');
-    // } else {
-    //     birthday_djs = null;
-    // }
+    if (open_member_id === 0) return res.json('請先登入');
 
-    // const sql = "INSERT INTO address_book" +
-    //     "(name, email, mobile, birthday, address, created_at)" +
-    //     " VALUES ( ?, ?, ?, ?, ?, NOW())";
+    const meet_time = meet_date + 'T' + meet_hour;
 
-    // const result = await db.query(sql, [
-    //     name,
-    //     email,
-    //     mobile,
-    //     birthday_djs,
-    //     address
-    // ])
+    const sql = `INSERT INTO open_for_you 
+    (open_member_id,meet_time,meet_place,target_store,tip,open_status)
+    VALUES(?,?,?,?,?,?)`;
+
+    const result = await db.query(sql, [
+        open_member_id,
+        meet_time,
+        meet_place,
+        target_store,
+        tip,
+        open_status
+    ])
 
 
-    // res.json({
-    //     result,
-    //     postData: req.body
-    // })
-
-
-    console.log(req.body)
-    const response = { ...req.body, 'title': '怎麼是空的' }
-    res.json(response);
+    res.json({
+        result,
+        postData: req.body
+    })
 });
 
 

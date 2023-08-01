@@ -141,14 +141,6 @@ const getListDataASC = async (req, shop_id) => {
     return output
 }
 
-// middleware
-// router.use((req, res, next) => {
-//     res.locals.title = '通訊錄 | ' + res.locals.title;
-//     next()
-// })
-console.log('--------------')
-
-
 router.post('/res-register-form/', multipartParser, async (req, res) => {
     res.send(req.params)
 
@@ -157,6 +149,114 @@ router.post('/res-register-form/', multipartParser, async (req, res) => {
         error: '',
         data: null,
     };
+
+    let city = ''
+    if (req.body.city == '台北市') {
+        city = 1
+    } else if (req.body.city == '新北市') {
+        city = 2
+    } else if (req.body.city == '基隆市') {
+        city = 3
+    }
+
+    let area = ''
+    if (req.body.city == '台北市' && req.body.area == '中正區') {
+        area = 0
+    } else if (req.body.city == '台北市' && req.body.area == '大同區') {
+        area = 1
+    } else if (req.body.city == '台北市' && req.body.area == '中山區') {
+        area = 2
+    } else if (req.body.city == '台北市' && req.body.area == '松山區') {
+        area = 3
+    } else if (req.body.city == '台北市' && req.body.area == '大安區') {
+        area = 4
+    } else if (req.body.city == '台北市' && req.body.area == '萬華區') {
+        area = 5
+    } else if (req.body.city == '台北市' && req.body.area == '信義區') {
+        area = 6
+    } else if (req.body.city == '台北市' && req.body.area == '士林區') {
+        area = 7
+    } else if (req.body.city == '台北市' && req.body.area == '北投區') {
+        area = 8
+    } else if (req.body.city == '台北市' && req.body.area == '內湖區') {
+        area = 9
+    } else if (req.body.city == '台北市' && req.body.area == '南港區') {
+        area = 10
+    } else if (req.body.city == '台北市' && req.body.area == '文山區') {
+        area = 11
+    } else if (req.body.city == '新北市' && req.body.area == '萬里區') {
+        area = 0
+    } else if (req.body.city == '新北市' && req.body.area == '金山區') {
+        area = 1
+    } else if (req.body.city == '新北市' && req.body.area == '板橋區') {
+        area = 2
+    } else if (req.body.city == '新北市' && req.body.area == '汐止區') {
+        area = 3
+    } else if (req.body.city == '新北市' && req.body.area == '深坑區') {
+        area = 4
+    } else if (req.body.city == '新北市' && req.body.area == '石碇區') {
+        area = 5
+    } else if (req.body.city == '新北市' && req.body.area == '瑞芳區') {
+        area = 6
+    } else if (req.body.city == '新北市' && req.body.area == '平溪區') {
+        area = 7
+    } else if (req.body.city == '新北市' && req.body.area == '雙溪區') {
+        area = 8
+    } else if (req.body.city == '新北市' && req.body.area == '貢寮區') {
+        area = 9
+    } else if (req.body.city == '新北市' && req.body.area == '新店區') {
+        area = 10
+    } else if (req.body.city == '新北市' && req.body.area == '坪林區') {
+        area = 11
+    } else if (req.body.city == '新北市' && req.body.area == '烏來區') {
+        area = 12
+    } else if (req.body.city == '新北市' && req.body.area == '永和區') {
+        area = 13
+    } else if (req.body.city == '新北市' && req.body.area == '中和區') {
+        area = 14
+    } else if (req.body.city == '新北市' && req.body.area == '土城區') {
+        area = 15
+    } else if (req.body.city == '新北市' && req.body.area == '三峽區') {
+        area = 16
+    } else if (req.body.city == '新北市' && req.body.area == '樹林區') {
+        area = 17
+    } else if (req.body.city == '新北市' && req.body.area == '鶯歌區') {
+        area = 18
+    } else if (req.body.city == '新北市' && req.body.area == '三重區') {
+        area = 19
+    } else if (req.body.city == '新北市' && req.body.area == '新莊區') {
+        area = 20
+    } else if (req.body.city == '新北市' && req.body.area == '泰山區') {
+        area = 21
+    } else if (req.body.city == '新北市' && req.body.area == '林口區') {
+        area = 22
+    } else if (req.body.city == '新北市' && req.body.area == '蘆洲區') {
+        area = 23
+    } else if (req.body.city == '新北市' && req.body.area == '五股區') {
+        area = 24
+    } else if (req.body.city == '新北市' && req.body.area == '八里區') {
+        area = 25
+    } else if (req.body.city == '新北市' && req.body.area == '淡水區') {
+        area = 26
+    } else if (req.body.city == '新北市' && req.body.area == '三芝區') {
+        area = 27
+    } else if (req.body.city == '新北市' && req.body.area == '石門區') {
+        area = 28
+    } else if (req.body.city == '基隆市' && req.body.area == '仁愛區') {
+        area = 0
+    } else if (req.body.city == '基隆市' && req.body.area == '信義區') {
+        area = 1
+    } else if (req.body.city == '基隆市' && req.body.area == '中正區') {
+        area = 2
+    } else if (req.body.city == '基隆市' && req.body.area == '中山區') {
+        area = 3
+    } else if (req.body.city == '基隆市' && req.body.area == '安樂區') {
+        area = 4
+    } else if (req.body.city == '基隆市' && req.body.area == '暖暖區') {
+        area = 5
+    } else if (req.body.city == '基隆市' && req.body.area == '七堵區') {
+        area = 6
+    }
 
     const salt = bcrypt.genSaltSync(10)
     const hashPassword = bcrypt.hashSync(req.body.password, salt)
@@ -188,14 +288,14 @@ router.post('/res-register-form/', multipartParser, async (req, res) => {
         const [result_shop] = await conn.query(sql_shop, [
             req.body.account,
             hashPassword,
-            req.body.name,
+            req.body.shopname,
             req.body.owner,
             req.body.res_cate,
             req.body.description,
             req.body.avg_consumption,
             req.body.photo,
-            req.body.city,
-            req.body.area,
+            city,
+            area,
             req.body.fulladdress1,
             req.body.phone,
             req.body.longitude,
@@ -365,16 +465,6 @@ router.delete('/item-management/deleteItem/:food_id', async (req, res) => {
     res.json(result)
 })
 
-router.get('/api', async (req, res) => {
-    const output = await getListData(req);  // return是output
-    output.rows.forEach(i => {
-        i.birthday = dayjs(i.birthday).format('YYYY-MM-DD');
-        delete i.created_at
-    })
-
-    res.json(output)
-})
-
 // 商家取得訂單資料
 router.post('/getShopOrder', async (req, res) => {
     // res.json(req.body)
@@ -406,67 +496,67 @@ router.post('/getShopOrder', async (req, res) => {
     const orderSum = rows1.map((v) => {
         let orderArr = [];
         for (i = 0; i < rows.length; i++) {
-          if (v.open_sid == rows[i].open_sid) {
-            orderArr.push({
-              open_sid: rows[i].open_sid,
-              title: rows[i].food_title,
-              amount: rows[i].order_quantity,
-              price: rows[i].order_price,
-              meet_time: rows[i].meet_time, // 加入meet_time
-            });
-          }
+            if (v.open_sid == rows[i].open_sid) {
+                orderArr.push({
+                    open_sid: rows[i].open_sid,
+                    title: rows[i].food_title,
+                    amount: rows[i].order_quantity,
+                    price: rows[i].order_price,
+                    meet_time: rows[i].meet_time, // 加入meet_time
+                });
+            }
         }
         return orderArr;
-      });
-      
-      const result = orderSum.reduce((acc, curr) => {
+    });
+
+    const result = orderSum.reduce((acc, curr) => {
         curr.forEach((item) => {
-          const existingItem = acc.find((i) => i.open_sid === item.open_sid);
-          if (existingItem) {
-            existingItem.titles.push(item.title);
-            existingItem.amounts.push(item.amount);
-            existingItem.prices.push(item.price);
-            // 若meet_time不同，則合併meet_time，這裡假設相同open_sid的meet_time都一樣
-            if (existingItem.meet_time !== item.meet_time) {
-              existingItem.meet_time = existingItem.meet_time + " / " + item.meet_time;
+            const existingItem = acc.find((i) => i.open_sid === item.open_sid);
+            if (existingItem) {
+                existingItem.titles.push(item.title);
+                existingItem.amounts.push(item.amount);
+                existingItem.prices.push(item.price);
+                // 若meet_time不同，則合併meet_time，這裡假設相同open_sid的meet_time都一樣
+                if (existingItem.meet_time !== item.meet_time) {
+                    existingItem.meet_time = existingItem.meet_time + " / " + item.meet_time;
+                }
+            } else {
+                acc.push({
+                    open_sid: item.open_sid,
+                    titles: [item.title],
+                    amounts: [item.amount],
+                    prices: [item.price],
+                    meet_time: item.meet_time, // 加入meet_time
+                });
             }
-          } else {
-            acc.push({
-              open_sid: item.open_sid,
-              titles: [item.title],
-              amounts: [item.amount],
-              prices: [item.price],
-              meet_time: item.meet_time, // 加入meet_time
-            });
-          }
         });
         return acc;
-      }, []);
-      
-      const mergedData = result.map((dataObj) => {
+    }, []);
+
+    const mergedData = result.map((dataObj) => {
         const mergedObj = { ...dataObj };
         const titleMap = new Map();
-      
+
         for (let i = 0; i < dataObj.titles.length; i++) {
-          const title = dataObj.titles[i];
-          const amount = dataObj.amounts[i];
-          const price = dataObj.prices[i];
-      
-          if (titleMap.has(title)) {
-            const existingIndex = titleMap.get(title);
-            mergedObj.amounts[existingIndex] += amount;
-          } else {
-            titleMap.set(title, i);
-          }
+            const title = dataObj.titles[i];
+            const amount = dataObj.amounts[i];
+            const price = dataObj.prices[i];
+
+            if (titleMap.has(title)) {
+                const existingIndex = titleMap.get(title);
+                mergedObj.amounts[existingIndex] += amount;
+            } else {
+                titleMap.set(title, i);
+            }
         }
-      
+
         mergedObj.titles = Array.from(titleMap.keys());
         mergedObj.amounts = Array.from(titleMap.values()).map((index) => mergedObj.amounts[index]);
         mergedObj.prices = Array.from(titleMap.values()).map((index) => mergedObj.prices[index]);
-      
+
         return mergedObj;
-      });
-      
+    });
+
 
     //   console.log(mergedData);
 
@@ -518,85 +608,6 @@ router.get('/api/verify/:sid', async (req, res) => {
 
 })
 
-// 取得單筆資料
-router.get('/api/:sid', async (req, res) => {
-    // 1、先設定要輸出的output
-    const output = {
-        success: false,
-        error: '',
-        data: null,
-    }
-
-    const sid = parseInt(req.params.sid) || 0;
-    if (!sid) {
-        output.error = '沒有這筆資料';
-        return res.json(output)
-    }
-
-    const sql = `SELECT * FROM address_book WHERE sid=${sid}`
-    const [rows] = await db.query(sql)  // array
-
-    // 檢查是否有這個欄位，沒有就顯示error
-    if (!rows.length) {
-        output.error = 'No Data';
-        return res.json(output)
-    } else {
-        // 調整時間格式
-        rows[0].birthday = dayjs(rows[0].birthday).format('YYYY-MM-DD')
-        output.data = rows
-        return res.json(output)
-    }
-
-})
-
-
-// read data
-router.get('/', async (req, res) => {
-
-    const output = await getListData(req);
-    if (output.redirect) {
-        return res.redirect(output.redirect)
-    }
-    res.render('address-book/index', output)
-
-})
-
-// 新增表單:用get到表單連結
-router.get('/add', async (req, res) => {
-
-    res.render('address-book/add')
-})
-// 用post方法傳送表單內容到db並在前端render
-// upload.none():沒有要上傳任何檔案，但是要解析檔案。
-router.post('/', multipartParser, async (req, res) => {
-
-    const sql = "INSERT INTO `address_book`" +
-        "(`name`, `email`, `mobile`, `birthday`, `address`, `created_at`)" +
-        "VALUES" +
-        "(?, ?, ?, ?, ?, NOW())"
-
-    // 檢查date格式
-    let birthday = dayjs(req.body.birthday)
-    if (birthday.isValid()) {
-        birthday = birthday.format('YYYY-MM-DD')
-    } else {
-        birthday = null
-    }
-
-    const [result] = await db.query(sql, [
-        req.body.name,
-        req.body.email,
-        req.body.mobile,
-        birthday,
-        req.body.address,
-    ])
-
-    res.json({
-        result,
-        postData: req.body
-    })
-})
-
 // 測試表單(checkbox&radio button)
 router.get('/add-try', async (req, res) => {
     res.render('address-book/add-try');
@@ -604,23 +615,6 @@ router.get('/add-try', async (req, res) => {
 router.post('/add-try', multipartParser, async (req, res) => {
     res.json(req.body);
 });
-
-// 修改表單的頁面
-router.get('/edit/:sid', async (req, res) => {
-    // res.json(req.params)
-    let { sid } = req.params;
-    sid = parseInt(sid);                // 轉換為整數就不會有sql injection的問題
-    const [rows] = await db.query(`SELECT * FROM address_book WHERE sid='${sid}'`)
-    console.log(rows[0])
-
-    // [rows]拿到陣列，若array沒有值(length為0)就redirect
-    if (!rows.length) {
-        return res.redirect(req.baseUrl)
-    }
-    res.render('address-book/edit', { rows: rows[0] })  // rows[0]為物件
-
-    // res.json(rows[0])
-})
 
 // 修改餐廳商品的api
 router.put('/:food_id', async (req, res) => {
@@ -656,72 +650,145 @@ router.put('/:food_id', async (req, res) => {
     // res.json(req.params)
 })
 
-// 修改表單的API
-router.put('/:sid', async (req, res) => {
-    console.log(req.body)
+// 商家編輯資料
+router.post('/getShopData', async (req, res) => {
+    const shop_id = parseInt(req.body.id)
+    // res.json(req.body)
+    const sql = "SELECT * FROM shops INNER JOIN res_opentime ON shops.sid = res_opentime.res_id WHERE shops.sid=?"
 
-    // 嚴謹的做法:先再找到那筆資料一次
-    let { sid } = req.params;
-    sid = parseInt(sid);
-    const [rows] = await db.query(`SELECT * FROM address_book WHERE sid='${sid}'`)
-    if (!rows.length) {
-        return res.json({ msg: '編號錯誤' })   // 這邊就return，確保後面不會繼續執行
+    const [rows] = await db.query(sql, [shop_id])
+
+    const result = rows[0]
+
+    let res_cate = '';
+    if(result.category == 1){
+        res_cate = '中式'
+    }else if (result.category == 2){
+        res_cate = '西式'
+    }else if (result.category == 3){
+        res_cate = '日式'
+    }else if (result.category == 4){
+        res_cate = '韓式'
+    }else if (result.category == 5){
+        res_cate = '美式'
+    }else if (result.category == 6){
+        res_cate = '泰式'
     }
-    let row = { ...rows[0], ...req.body };   // 拿到那個object，並用其餘運算子更新內容
-    // console.log(row)
-    const sql = `UPDATE \`address_book\` SET ? WHERE sid=?`; // 第一個問號就放更新過的row，第二個放sid
-    const [result] = await db.query(sql, [row, sid])
 
 
-    res.json({
-        // result有一個key為changedRows，代表有沒有影響到資料(affectedRows是指有沒有選到那一個rows)
-        success: !!result.changedRows, // 用!!changedRows來看有沒有修改成功
-        result,
-    })
+    let city = '';
+    if (result.city == 1) {
+        city = '台北市'
+    } else if (result.city == 2) {
+        city = '新北市'
+    } else if (result.city == 3) {
+        city = '基隆市'
+    }
+
+    let area = ''
+    if(result.city == 1 && result.area == '0'){
+        area  = '中正區'
+    }else if(result.city == 1 && result.area == '1'){
+        area  = '大同區'
+    }else if(result.city == 1 && result.area == '2'){
+        area  = '中山區'
+    }else if(result.city == 1 && result.area == '3'){
+        area  = '松山區'
+    }else if(result.city == 1 && result.area == '4'){
+        area  = '大安區'
+    }else if(result.city == 1 && result.area == '5'){
+        area  = '萬華區'
+    }else if(result.city == 1 && result.area == '6'){
+        area  = '信義區'
+    }else if(result.city == 1 && result.area == '7'){
+        area  = '士林區'
+    }else if(result.city == 1 && result.area == '8'){
+        area  = '北投區'
+    }else if(result.city == 1 && result.area == '9'){
+        area  = '內湖區'
+    }else if(result.city == 1 && result.area == '10'){
+        area  = '南港區'
+    }else if(result.city == 1 && result.area == '11'){
+        area  = '文山區'
+    }else if(result.city == 2 && result.area == '0'){
+        area  = '萬里區'
+    }else if(result.city == 2 && result.area == '1'){
+        area  = '金山區'
+    }else if(result.city == 2 && result.area == '2'){
+        area  = '板橋區'
+    }else if(result.city == 2 && result.area == '3'){
+        area  = '汐止區'
+    }else if(result.city == 2 && result.area == '4'){
+        area  = '深坑區'
+    }else if(result.city == 2 && result.area == '5'){
+        area  = '石碇區'
+    }else if(result.city == 2 && result.area == '6'){
+        area  = '瑞芳區'
+    }else if(result.city == 2 && result.area == '7'){
+        area  = '平溪區'
+    }else if(result.city == 2 && result.area == '8'){
+        area  = '雙溪區'
+    }else if(result.city == 2 && result.area == '9'){
+        area  = '貢寮區'
+    }else if(result.city == 2 && result.area == '10'){
+        area  = '新店區'
+    }else if(result.city == 2 && result.area == '11'){
+        area  = '坪林區'
+    }else if(result.city == 2 && result.area == '12'){
+        area  = '烏來區'
+    }else if(result.city == 2 && result.area == '13'){
+        area  = '永和區'
+    }else if(result.city == 2 && result.area == '14'){
+        area  = '中和區'
+    }else if(result.city == 2 && result.area == '15'){
+        area  = '土城區'
+    }else if(result.city == 2 && result.area == '16'){
+        area  = '三峽區'
+    }else if(result.city == 2 && result.area == '17'){
+        area  = '樹林區'
+    }else if(result.city == 2 && result.area == '18'){
+        area  = '鶯歌區'
+    }else if(result.city == 2 && result.area == '19'){
+        area  = '三重區'
+    }else if(result.city == 2 && result.area == '20'){
+        area  = '新莊區'
+    }else if(result.city == 2 && result.area == '21'){
+        area  = '泰山區'
+    }else if(result.city == 2 && result.area == '22'){
+        area  = '林口區'
+    }else if(result.city == 2 && result.area == '23'){
+        area  = '蘆洲區'
+    }else if(result.city == 2 && result.area == '24'){
+        area  = '五股區'
+    }else if(result.city == 2 && result.area == '25'){
+        area  = '八里區'
+    }else if(result.city == 2 && result.area == '26'){
+        area  = '淡水區'
+    }else if(result.city == 2 && result.area == '27'){
+        area  = '三芝區'
+    }else if(result.city == 2 && result.area == '28'){
+        area  = '石門區'
+    }else if(result.city == ˇ && result.area == '0'){
+        area  = '仁愛區'
+    }else if(result.city == ˇ && result.area == '1'){
+        area  = '信義區'
+    }else if(result.city == ˇ && result.area == '2'){
+        area  = '中正區'
+    }else if(result.city == ˇ && result.area == '3'){
+        area  = '中山區'
+    }else if(result.city == ˇ && result.area == '4'){
+        area  = '安樂區'
+    }else if(result.city == ˇ && result.area == '5'){
+        area  = '暖暖區'
+    }else if(result.city == ˇ && result.area == '6'){
+        area  = '七堵區'
+    }
+
+
+    res.json({...result, city:city,area:area, password:'', category:res_cate})
+
+
+
 })
-
-// 兩層式表單
-router.get('/cate1', async (req, res) => {
-
-    const [rows] = await db.query("SELECT * FROM categories ORDER BY sid");
-
-    // 先編成字典
-    const dict = {}
-    rows.forEach(i => {
-        dict[i.sid] = i
-    });
-
-    rows.forEach(i => {
-        const parent = dict[i.parent_sid];
-        if (parent) {
-            parent.nodes = parent.nodes || [];
-            parent.nodes.push(i);
-        }
-    });
-
-    const newAr = [];
-    rows.forEach(i => {
-        if (i.parent_sid == '0') {
-            newAr.push(i);
-        }
-    });
-
-    res.json(req.body)
-
-});
-
-// delete
-router.delete('/:sid', async (req, res) => {
-
-    const { sid } = req.params;
-
-    const sql = `DELETE FROM \`address_book\` WHERE sid=?`;
-    const [result] = await db.query(sql, [sid])
-
-    res.json(result)
-
-})
-
-
 
 module.exports = router;

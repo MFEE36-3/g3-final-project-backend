@@ -3,12 +3,13 @@ const { query } = require('express');
 const db = require(__dirname + '/../modules/mysql2');
 const dayjs = require('dayjs');
 const router = express.Router();
+const upload = require(__dirname + "/../modules/img-upload");
 const multipartParser = upload.none();
 const moment = require('moment-timezone')
 
 
 // 取得首頁-top5
-router.get('/', async (req, res) => {
+router.get('/top5', async (req, res) => {
     let output = {
         rows: []
     }
@@ -56,31 +57,6 @@ router.get('/dist', async (req, res) => {
     const [rows] = await db.query(sql);
     output.rows = rows;
 
-
-    return res.json(output);
-});
-
-
-// 取得餐廳查詢結果
-router.get('/results', async (req, res) => {
-    let output = {
-        rows: []
-    }
-
-    let keyword = req.query.keyword || '';
-
-    let where = ' WHERE 1 ';
-    if (keyword) {
-        const kw_escaped = db.escape('%' + keyword + '%');
-        where += ` AND ( 
-        \`name\` LIKE ${kw_escaped} 
-        OR
-        \`address\` LIKE ${kw_escaped}
-        )
-      `;
-    }
-    const [rows] = await db.query(sql);
-    output.rows = rows;
 
     return res.json(output);
 });
@@ -237,12 +213,14 @@ router.get("/:sid", async (req, res) => {
         detail: null,
         booking: [],
         seattype: [],
+        fooditems: [],
     };
     const sid = parseInt(req.params.sid) || 0;
     if (!sid) {
         // 沒有 sid
         output.error = "沒有 sid !";
     } else {
+        //取得餐廳資訊info
         const detailsql = `SELECT * FROM shops s 
         JOIN city c ON s.city = c.city_id 
         JOIN area a ON s.area = a.area_sid 
@@ -250,20 +228,22 @@ router.get("/:sid", async (req, res) => {
         JOIN res_opentime ro ON s.sid = ro.res_id 
         WHERE s.sid=${sid}`;
 
-        // const bookingsql = `SELECT s.sid,b.* FROM shops s 
-        // JOIN booking b ON s.sid = b.shop_id 
-        // WHERE s.sid=${sid}`;
-
+        //取得訂單資訊
         const bookingsql = `SELECT b.*,st.seat_number FROM booking b 
         JOIN shops s ON b.shop_id =  s.sid
         JOIN seat_type st ON b.table = st.seat_id
         WHERE b.shop_id=${sid}`;
 
+        //取得座位資訊seat
         const seattypesql = `SELECT * FROM seat_type`;
+
+        //取得餐點資訊
+        const foodsql = `SELECT * FROM food_items AS fi JOIN food_cate AS fc ON fi.food_cate = fc.food_sid WHERE fi.shop_id=${sid}`
 
         const [detail] = await db.query(detailsql);
         const [booking] = await db.query(bookingsql);
         const [seattype] = await db.query(seattypesql);
+        const [fooditems] = await db.query(foodsql);
 
         if (detail.length) {
             output.success = true;
@@ -280,8 +260,6 @@ router.get("/:sid", async (req, res) => {
                 v.booking_date = moment(v.booking_date).format('YYYY-MM-DD')
                 return v;
             })
-
-            output.booking = booking;
             // console.log(rows)
         } else {
             // 沒有資料
@@ -293,6 +271,16 @@ router.get("/:sid", async (req, res) => {
             output.seattype = seattype;
 
             // console.log(seattype)
+        } else {
+            // 沒有資料
+            output.error = "沒有資料 !";
+        }
+
+        if (fooditems.length) {
+            output.success = true;
+            output.fooditems = fooditems;
+
+            // console.log(fooditems)
         } else {
             // 沒有資料
             output.error = "沒有資料 !";
@@ -327,6 +315,15 @@ router.post("/", async (req, res) => {
         postData: req.body
     });
 })
+
+//取得餐點資料
+router.get("/togo", async (req, res) => {
+
+})
+
+
+
+
 
 
 module.exports = router;

@@ -19,7 +19,7 @@ Retrieves a specific category using the given ID.
 #### GET /ecshop/item/:item_id
 Retrieves a specific item using the given ID. The response includes item details as well as associated category and factory details.
 
-#### GET /ecshop/items
+#### GET /ecshop/item
 Retrieves a list of items based on provided query parameters.
 
 - `keyword`: (Optional) A string used to search items by name.

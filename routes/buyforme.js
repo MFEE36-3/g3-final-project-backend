@@ -63,6 +63,67 @@ router.get('/openforyou', async (req, res) => {
     return res.json(output);
 });
 
+// 拿點餐單資料
+router.post('/foodlist', async (req, res) => {
+
+    let output = {
+        rows: []
+    }
+
+    const { targetstore } = req.body
+
+    const sql = `SELECT shops.sid,shop,food_title,food_price,food_des,food_id,food_img FROM shops 
+    JOIN food_items ON shops.sid = food_items.shop_id
+    WHERE shops.sid = ${targetstore}`;
+    [rows] = await db.query(sql);
+
+
+    output = { ...output, rows }
+
+    return res.json(output);
+});
+
+// 拿跟團紀錄
+router.post('/buyforme', async (req, res) => {
+
+    let output = {
+        rows: []
+    }
+
+    const { member_id } = req.body
+
+    const sql = `SELECT open_for_you.meet_place,buy_for_me.order_sid,member_info.nickname,open_for_you.meet_time,buy_for_me.order_status,open_for_you.open_sid FROM buy_for_me 
+    JOIN open_for_you ON buy_for_me.open_sid = open_for_you.open_sid
+    JOIN member_info ON member_info.sid = open_for_you.open_member_id
+    WHERE buy_for_me.order_member_id = ${member_id}
+    HAVING buy_for_me.order_status = 1
+    ORDER BY open_for_you.meet_time ASC`;
+    [arr1] = await db.query(sql);
+
+    const sql2 = `SELECT buy_for_me.open_sid,buy_for_me_detail.order_quantity,food_items.food_title FROM buy_for_me 
+    JOIN buy_for_me_detail ON buy_for_me_detail.order_sid = buy_for_me.order_sid
+    JOIN food_items ON food_items.food_id = buy_for_me_detail.order_food
+    WHERE buy_for_me.order_member_id = ${member_id}`;
+    [arr2] = await db.query(sql2);
+
+    const rows = arr1.map((v) => {
+
+        const foods = [];
+
+        for (let i = 0; i < arr2.length; i++) {
+            if (v.open_sid === arr2[i].open_sid) {
+                foods.push([arr2[i].food_title, arr2[i].order_quantity])
+            }
+        }
+
+        return ({ ...v, foods })
+    })
+
+    output = { ...output, rows }
+
+    return res.json(output);
+});
+
 
 
 // 拿評論資料

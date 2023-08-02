@@ -209,25 +209,17 @@ exports.confirmCheckout = async (req, res) => {
                     order_id: orderId
                 }
             });
-            res.status(200).send({
-                message: "Payment successful!",
-                order_id: orderId,
-            });
+            res.redirect(linepay.confirm_client_url);
         } else {
             console.error(linePayRes?.data?.returnMessage);
             throw new Error('Payment failed: ' + linePayRes?.data?.returnMessage);
         }
       } catch (error) {
-        res.status(400).send({
-            message: error.message,
-        });
+        res.redirect(linepay.cancel_client_url);
       }
 }
 
 exports.cancelCheckout = async (req, res) => {
     const { transactionId, orderId } = req.query;
-    res.status(200).send({
-        message: "Payment canceled!",
-        order_id: orderId,
-    });
+    res.redirect(linepay.cancel_client_url);
 }

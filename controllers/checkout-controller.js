@@ -6,6 +6,7 @@ const db = require('../models');
 const linepay = require('../modules/config').linepay;
 
 const Shop = db.shop;
+const Member = db.member;
 
 function createLinePayBody(order) {
     return {
@@ -56,6 +57,33 @@ async function linepayCheckout(order) {
     }
 }
 
+async function getCoupon(member_id, coupon_sid) {
+    try {
+        const coupon = await Member.user_coupon.findOne({
+            where: {
+                member_id: member_id,
+                coupon_sid: coupon_sid,
+                coupon_status_sid: 1
+            },
+            include: [
+                {
+                    model: Member.coupon,
+                    attributes: ['coupon_discount']
+                }
+            ]
+        });
+
+
+        if (!coupon) {
+            throw new Error('Invalid coupon');
+        }
+
+        return coupon;
+    } catch (error) {
+        throw error;
+    }
+}
+
 
 exports.simpleCheckout = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -63,10 +91,19 @@ exports.simpleCheckout = async (req, res) => {
     try {
         // Extract data from the request
         const { items, address_info, payment_info } = req.body;
-        const userId = 'test';
+        const userId = res.locals.jwtData.id;
 
         let total_price = 0;
         let basket = [];
+        let discount = 0;
+
+        // Get coupon
+
+        if (payment_info.coupon_sid) {
+            const coupon = await getCoupon(userId, payment_info.coupon_sid);
+            discount = coupon.coupon.coupon_discount;
+        }
+
         for (const item of items) {
             const item_detail = await Shop.item.findOne({
                 where: {
@@ -111,6 +148,7 @@ exports.simpleCheckout = async (req, res) => {
             address_id: address.address_id,
             payment_id: payment.payment_id,
             member_id: userId,
+            coupon_sid: payment_info.coupon_sid || null,
             status: payment_info.payment_type === 'wallet'? 1 : 0,
         }, { transaction });
 
@@ -126,20 +164,22 @@ exports.simpleCheckout = async (req, res) => {
 
         let linepayRedirect = null;
         if (payment_info.payment_type === 'linepay') {
+            const total_price_discount = total_price - discount;
+            const flat_products = {
+                id: basket[0].item_id,
+                name: basket[0].name + ' 等商品',
+                quantity: 1,
+                price: total_price_discount,   
+            }
+
             const packages = {
                 id: order.order_id,
-                amount: total_price,
-                products: basket.map((item) => {
-                    return {
-                        id: item.item_id,
-                        name: item.name,
-                        quantity: item.amount,
-                        price: item.price,
-                    }
-                }),
+                amount: total_price_discount,
+                products: [flat_products]
             }
+
             const orderPayload = {
-                amount: total_price,
+                amount: total_price_discount,
                 currency: 'TWD',
                 orderId: order.order_id,
                 packages: [packages],
@@ -148,6 +188,17 @@ exports.simpleCheckout = async (req, res) => {
 
             linepayRedirect = linepayRes?.data.info.paymentUrl.web;
         }
+
+        // update coupon status
+        await Member.user_coupon.update({
+            coupon_status_sid: 2,
+            coupon_use_time: new Date()
+        }, {
+            where: {
+                member_id: userId,
+                coupon_sid: payment_info.coupon_sid
+            }
+        }, { transaction });
 
         // Commit the transaction
         await transaction.commit();
@@ -169,6 +220,7 @@ exports.simpleCheckout = async (req, res) => {
 
 exports.confirmCheckout = async (req, res) => {
     const { transactionId, orderId } = req.query;
+    const transaction = await db.sequelize.transaction();
 
     try {
         // 建立 LINE Pay 請求規定的資料格式
@@ -181,6 +233,10 @@ exports.confirmCheckout = async (req, res) => {
                 {
                     model: Shop.orderdetail,
                     attributes: ['price', 'amount']
+                },
+                {
+                    model: Member.coupon,
+                    attributes: ['coupon_discount']
                 }
             ]
         });
@@ -188,7 +244,7 @@ exports.confirmCheckout = async (req, res) => {
             return acc + (cur.price * cur.amount);
         }, 0);
         const linePayBody = {
-          amount: totalPrice,
+          amount: totalPrice - order.coupon.coupon_discount,
           currency: 'TWD',
         }
   
@@ -208,13 +264,16 @@ exports.confirmCheckout = async (req, res) => {
                 where: {
                     order_id: orderId
                 }
-            });
+            }, { transaction });
+            await transaction.commit();
             res.redirect(linepay.confirm_client_url);
         } else {
             console.error(linePayRes?.data?.returnMessage);
             throw new Error('Payment failed: ' + linePayRes?.data?.returnMessage);
         }
       } catch (error) {
+        // Rollback the transaction
+        await transaction.rollback();
         res.redirect(linepay.cancel_client_url);
       }
 }

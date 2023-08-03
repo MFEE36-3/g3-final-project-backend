@@ -1,5 +1,6 @@
 require('dotenv').config();
 // Create connection to database
+const nodemailer = require('nodemailer')
 
 var private_key = process.env.PRIVATE_KEY;
 var token_expire = parseInt(process.env.TOKEN_EXP);// test: 60mins ,formal : 5 mins
@@ -27,9 +28,36 @@ var linepay = {
     return_cancel_url: process.env.LINEPAY_RETURN_CANCEL_URL,
 }
 
+let transport
+
+transport = {
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // use TLS
+  //create a .env file and define the process.env variables with your credentials.
+  auth: {
+    user: process.env.SMTP_TO_EMAIL,
+    pass: process.env.SMTP_TO_PASSWORD,
+  },
+}
+
+// call the transport function
+const transporter = nodemailer.createTransport(transport)
+
+transporter.verify((error, success) => {
+  if (error) {
+    //if error happened code ends here
+    console.error(error)
+  } else {
+    //this means success
+    console.log('Ready to send mail!')
+  }
+})
+
 module.exports = {
     private_key,
     token_expire,
     db_config,
-    linepay
+    linepay,
+    transporter
 };

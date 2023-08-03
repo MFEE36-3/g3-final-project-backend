@@ -57,12 +57,12 @@ async function linepayCheckout(order) {
     }
 }
 
-async function getCoupon(member_id, coupon_sid) {
+async function getCoupon(member_id, get_coupon_sid) {
     try {
         const coupon = await Member.user_coupon.findOne({
             where: {
                 member_id: member_id,
-                coupon_sid: coupon_sid,
+                get_coupon_sid: get_coupon_sid,
                 coupon_status_sid: 1
             },
             include: [
@@ -196,7 +196,7 @@ exports.simpleCheckout = async (req, res) => {
         }, {
             where: {
                 member_id: userId,
-                coupon_sid: payment_info.coupon_sid
+                get_coupon_sid: payment_info.coupon_sid
             }
         }, { transaction });
 
@@ -240,6 +240,7 @@ exports.confirmCheckout = async (req, res) => {
                 }
             ]
         });
+        console.log(order);
         const totalPrice = order.orderdetails.reduce((acc, cur) => {
             return acc + (cur.price * cur.amount);
         }, 0);
@@ -254,6 +255,7 @@ exports.confirmCheckout = async (req, res) => {
         // API 位址
         const url = `${linepay.site}/${linepay.version}${uri}`;
         const linePayRes = await axios.post(url, linePayBody, { headers });
+        console.log(linePayRes);
 
         // 請求成功...
         if (linePayRes?.data?.returnCode === '0000') {
@@ -273,6 +275,7 @@ exports.confirmCheckout = async (req, res) => {
         }
       } catch (error) {
         // Rollback the transaction
+        console.error(error.message);
         await transaction.rollback();
         res.redirect(linepay.cancel_client_url);
       }

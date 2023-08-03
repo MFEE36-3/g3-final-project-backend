@@ -235,17 +235,21 @@ exports.confirmCheckout = async (req, res) => {
                     attributes: ['price', 'amount']
                 },
                 {
-                    model: Member.coupon,
-                    attributes: ['coupon_discount']
+                    model: Member.user_coupon,
+                    include: [
+                        {
+                            model: Member.coupon,
+                            attributes: ['coupon_discount']
+                        }
+                    ]
                 }
             ]
         });
-        console.log(order);
         const totalPrice = order.orderdetails.reduce((acc, cur) => {
             return acc + (cur.price * cur.amount);
         }, 0);
         const linePayBody = {
-          amount: totalPrice - order.coupon.coupon_discount,
+          amount: totalPrice - order.user_coupon.coupon.coupon_discount,
           currency: 'TWD',
         }
   
@@ -255,7 +259,6 @@ exports.confirmCheckout = async (req, res) => {
         // API 位址
         const url = `${linepay.site}/${linepay.version}${uri}`;
         const linePayRes = await axios.post(url, linePayBody, { headers });
-        console.log(linePayRes);
 
         // 請求成功...
         if (linePayRes?.data?.returnCode === '0000') {

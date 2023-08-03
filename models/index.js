@@ -24,7 +24,7 @@ db.shop = require("./shop")(sequelize, Sequelize);
 db.member = require("./member")(sequelize, Sequelize);
 
 // define the associations
-db.member.coupon.belongsTo(db.shop.orders, {foreignKey: 'coupon_sid'});
-
+db.shop.orders.belongsTo(db.member.user_coupon, {foreignKey: 'coupon_sid', targetKey: 'get_coupon_sid'});
+db.member.user_coupon.hasMany(db.shop.orders, {foreignKey: 'coupon_sid', sourceKey: 'get_coupon_sid'});
 
 module.exports = db;

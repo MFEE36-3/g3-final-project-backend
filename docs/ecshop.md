@@ -90,7 +90,8 @@ Json format would as follow:
     },
     "payment_info": {
         "payment_type": "wallet",
-        "coupon_sid": 1 | null
+        "coupon_sid": 1 | null,
+        "shipfee": 60 | null (default 60)
     }
 }
 ```

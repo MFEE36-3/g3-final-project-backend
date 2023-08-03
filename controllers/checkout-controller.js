@@ -38,7 +38,7 @@ function createLinePayBody(order) {
     return headers;
   }
 
-async function linepayCheckout(order) {
+async function linepayRequest(order) {
     try {
         // 建立 LINE Pay 請求規定的資料格式
         const linePayBody = createLinePayBody(order);
@@ -84,6 +84,47 @@ async function getCoupon(member_id, get_coupon_sid) {
     }
 }
 
+async function linepayCheckout(basket, order, total_price, discount = 0, shipfee = 60) {
+    const total_price_discount = total_price - discount + shipfee;
+    const flat_products = {
+        id: basket[0].item_id,
+        name: basket[0].name + ' 等商品',
+        quantity: 1,
+        price: total_price_discount,   
+    }
+
+    const packages = {
+        id: order.order_id,
+        amount: total_price_discount,
+        products: [flat_products]
+    }
+
+    const orderPayload = {
+        amount: total_price_discount,
+        currency: 'TWD',
+        orderId: order.order_id,
+        packages: [packages],
+    }
+    const linepayRes = await linepayRequest(orderPayload);
+
+    linepayRedirect = linepayRes?.data.info.paymentUrl.web;
+    return linepayRedirect;
+}
+
+async function walletCheckout(order, total_price, discount = 0, shipfee = 60) {
+    const total_price_discount = total_price - discount + shipfee;
+    const member = await Member.member_info.findOne({
+        where: {
+            sid: order.member_id
+        }
+    });
+
+    if (member.wallet < total_price_discount + shipfee) {
+        throw new Error('Not enough money');
+    }
+
+    return;
+}
 
 exports.simpleCheckout = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -96,9 +137,21 @@ exports.simpleCheckout = async (req, res) => {
         let total_price = 0;
         let basket = [];
         let discount = 0;
+        let shipfee = payment_info.shipfee || 60;
+
+        // Get member
+        const member = await Member.member_info.findOne({
+            where: {
+                sid: userId
+            }
+        });
+
+        // If member level > 1, shipfee = 0
+        if (member.level > 1) {
+            shipfee = 0;
+        }
 
         // Get coupon
-
         if (payment_info.coupon_sid) {
             const coupon = await getCoupon(userId, payment_info.coupon_sid);
             discount = coupon.coupon.coupon_discount;
@@ -150,6 +203,8 @@ exports.simpleCheckout = async (req, res) => {
             member_id: userId,
             coupon_sid: payment_info.coupon_sid || null,
             status: payment_info.payment_type === 'wallet'? 1 : 0,
+            amount: total_price - discount,
+            shipfee: shipfee
         }, { transaction });
 
         // Create the order items
@@ -163,30 +218,16 @@ exports.simpleCheckout = async (req, res) => {
         }
 
         let linepayRedirect = null;
-        if (payment_info.payment_type === 'linepay') {
-            const total_price_discount = total_price - discount;
-            const flat_products = {
-                id: basket[0].item_id,
-                name: basket[0].name + ' 等商品',
-                quantity: 1,
-                price: total_price_discount,   
-            }
-
-            const packages = {
-                id: order.order_id,
-                amount: total_price_discount,
-                products: [flat_products]
-            }
-
-            const orderPayload = {
-                amount: total_price_discount,
-                currency: 'TWD',
-                orderId: order.order_id,
-                packages: [packages],
-            }
-            const linepayRes = await linepayCheckout(orderPayload);
-
-            linepayRedirect = linepayRes?.data.info.paymentUrl.web;
+        switch (payment_info.payment_type) {
+            case 'linepay':
+                linepayRedirect = await linepayCheckout(basket, order, total_price, discount, shipfee);
+                break;
+            case 'wallet':
+                // update wallet
+                await walletCheckout(order, total_price, discount, shipfee);
+                break;
+            default:
+                break;
         }
 
         // update coupon status
@@ -228,28 +269,11 @@ exports.confirmCheckout = async (req, res) => {
         const order = await Shop.orders.findOne({
             where: {
                 order_id: orderId
-            },
-            include: [
-                {
-                    model: Shop.orderdetail,
-                    attributes: ['price', 'amount']
-                },
-                {
-                    model: Member.user_coupon,
-                    include: [
-                        {
-                            model: Member.coupon,
-                            attributes: ['coupon_discount']
-                        }
-                    ]
-                }
-            ]
+            }
         });
-        const totalPrice = order.orderdetails.reduce((acc, cur) => {
-            return acc + (cur.price * cur.amount);
-        }, 0);
+        const totalPrice = order.amount + order.shipfee;
         const linePayBody = {
-          amount: totalPrice - order.user_coupon.coupon.coupon_discount,
+          amount: totalPrice,
           currency: 'TWD',
         }
   

@@ -182,6 +182,7 @@ router.get('/review', async (req, res) => {
 });
 
 
+// 寫入開單資料
 router.post('/openforyou', async (req, res) => {
 
     // TODO: 檢查資料格式
@@ -208,6 +209,63 @@ router.post('/openforyou', async (req, res) => {
 
     res.json({
         result,
+        postData: req.body
+    })
+});
+
+
+// 寫入跟單資料&跟單細項資料
+router.post('/setbuyforme', async (req, res) => {
+
+    // TODO: 檢查資料格式
+
+    const { order_member_id, nickname, mobile_number, order_amount, order_instructions, order_detail, open_sid, order_status } = req.body;
+
+    if (order_member_id === 0) return res.json('請先登入');
+
+    const sql = `INSERT INTO buy_for_me 
+    (open_sid,order_member_id,nickname,mobile_number,order_amount,order_instructions,order_status)
+    VALUES(?,?,?,?,?,?,?)`;
+
+    const result = await db.query(sql, [
+        open_sid,
+        order_member_id,
+        nickname,
+        mobile_number,
+        order_amount,
+        order_instructions,
+        order_status
+    ])
+
+    // 獲取最新插入的序號
+    const [lastInsertedIdResult] = await db.query('SELECT LAST_INSERT_ID() AS last_id');
+    const order_sid = lastInsertedIdResult[0].last_id;
+    
+
+
+    const sq2 = `INSERT INTO buy_for_me_detail
+    (order_sid,order_food,order_quantity,order_price)
+    VALUES(?,?,?,?)`;
+
+
+    const result2 = await Promise.all(
+
+        order_detail.map(async (v) => {
+            const response = await db.query(sq2, [
+                order_sid,
+                v.food_id,
+                v.food_quantity,
+                v.food_price
+            ])
+
+            const [ResultSetHeader] = response;
+            return ResultSetHeader.affectedRows;
+        })
+    )
+
+    res.json({
+        result,
+        result2,
         postData: req.body
     })
 });

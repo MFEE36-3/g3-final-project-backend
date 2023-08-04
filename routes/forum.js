@@ -4,8 +4,8 @@ const dayjs = require("dayjs");
 const router = express.Router();
 const upload = require(__dirname + "/../modules/img-upload");
 const multipartParser = upload.none();
-const forumUploadImg =require(__dirname + '/../modules/forumupload');
-const multer = require('multer');
+const forumUploadImg = require(__dirname + "/../modules/forumupload");
+const multer = require("multer");
 
 // 取得所有留言及論壇資料的路由
 router.get("/", async (req, res) => {
@@ -54,14 +54,14 @@ router.get("/", async (req, res) => {
 });
 
 // 新增文章的api
-router.post("/add", forumUploadImg.single('preImg'), async (req, res) => {
+router.post("/add", forumUploadImg.single("preImg"), async (req, res) => {
   let output = {
     success: true,
   };
-  console.log(req.file)
-  let photo = '';
-  if(req.file && req.file.filename){
-    photo = req.file.filename
+  console.log(req.file);
+  let photo = "";
+  if (req.file && req.file.filename) {
+    photo = req.file.filename;
   }
   const { header, content, user_id } = req.body;
   // 將文章資料插入到資料庫中
@@ -224,4 +224,138 @@ router.post("/addmessage", multipartParser, async (req, res) => {
     return res.json(output);
   }
 });
+//處理蒐藏愛心的API
+router.post("/handle-like-list", async (req, res) => {
+  let output = {
+    success: true,
+  };
+  let member = "";
+  if (res.locals.jwtData) {
+    member = res.locals.jwtData.id;
+  }
+  const receiveData = req.body.data;
+
+  console.log(receiveData);
+
+  let deleteLike = [];
+  let addLike = [];
+  //確定該會員有經過jwt認證並且有傳資料過來，才去資料庫讀取資料
+  if (member && receiveData.length > 0) {
+    const sql_prelike = `SELECT forum_sid FROM forum_favorite WHERE member_sid="${member}"`;
+    const [prelike_rows] = await db.query(sql_prelike);
+    const preLikeRestaurants = prelike_rows.map((v) => {
+      return v.rest_sid;
+    });
+
+    //將收到前端的資料與原先該會員收藏列表比對，哪些是要被刪除，哪些是要被增加
+    deleteLike = receiveData
+      .filter((v) => preLikeRestaurants.includes(v.forum_sid))
+      .map((v) => `"${v.forum_sid}"`);
+    addLike = receiveData.filter(
+      (v) => !preLikeRestaurants.includes(v.forum_sid)
+    );
+  }
+
+  if (deleteLike.length > 0) {
+    const deleteItems = deleteLike.join(", ");
+    const sql_delete_like = `DELETE FROM forum_favorite WHERE member_sid="${member}" AND forum_sid IN (${deleteItems})`;
+    const [result] = await db.query(sql_delete_like);
+    output.success = !!result.affectedRows;
+  }
+
+  if (addLike.length > 0) {
+    const sql_add_like = ` INSERT INTO forum_favorite(member_sid, forum_sid, date ) VALUES ?`;
+    const insertLike = addLike.map((v) => {
+      return [member, v.rest_sid, res.toDatetimeString(v.time)];
+    });
+
+    const [result] = await db.query(sql_add_like, [insertLike]);
+    output.success = !!result.affectedRows;
+  }
+  res.json(output);
+});
+//讀取收藏清單API
+router.get("/show-like", async (req, res) => {
+  let output = {
+    success: true,
+    likeDatas: [],
+  };
+
+  let member = "";
+  if (res.locals.jwtData) {
+    member = res.locals.jwtData.id;
+  }
+
+  let likeDatas = [];
+  if (member) {
+    const sql_likeList = `SELECT
+    r.rest_sid,
+    r.name,
+    r.city,
+    r.area,
+    (SELECT ru.rule_name FROM restaurant_associated_rule AS ar_sub
+    JOIN restaurant_rule AS ru ON ar_sub.rule_sid = ru.rule_sid
+    WHERE ar_sub.rest_sid = r.rest_sid
+    LIMIT 1) AS rule_name,
+    GROUP_CONCAT(DISTINCT s.service_name) AS service_names,
+    (SELECT img_name FROM restaurant_img WHERE rest_sid = r.rest_sid LIMIT 1) AS img_name,
+    MAX(rl.date) AS date
+    FROM
+    restaurant_information AS r
+    JOIN restaurant_associated_rule AS ar ON r.rest_sid = ar.rest_sid
+    JOIN restaurant_associated_service AS asr ON r.rest_sid = asr.rest_sid
+    JOIN restaurant_service AS s ON asr.service_sid = s.service_sid
+    JOIN restaurant_img AS ri ON r.rest_sid = ri.rest_sid
+    JOIN restaurant_like AS rl ON r.rest_sid = rl.rest_sid
+    WHERE rl.member_sid = '${member}'
+GROUP BY
+r.rest_sid,
+r.name,
+r.city,
+r.area
+ORDER BY
+date DESC`;
+
+    [likeDatas] = await db.query(sql_likeList);
+    likeDatas.forEach((v) => {
+      v.date = res.toDateString(v.date);
+    });
+  }
+  console.log(likeDatas);
+  output = {
+    ...output,
+    likeDatas,
+  };
+  return res.json(output);
+});
+//刪除收藏清單的APIjwtData
+
+router.delete("/likelist/:rid", async (req, res) => {
+  let output = {
+    success: true,
+    likeDatas: [],
+  };
+
+  let member = "";
+  if (res.locals.jwtData) {
+    member = res.locals.jwtData.id;
+  }
+  const { rid } = req.params;
+  let sql_deleteLikeList = "DELETE FROM `restaurant_like` WHERE ";
+
+  if (rid === "all") {
+    sql_deleteLikeList += `member_sid = '${member}'`;
+  } else {
+    sql_deleteLikeList += `member_sid = '${member}' AND rest_sid='${rid}'`;
+  }
+
+  try {
+    const [result] = await db.query(sql_deleteLikeList);
+    res.json({ ...result });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "An error occurred" });
+  }
+});
+
 module.exports = router;

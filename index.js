@@ -81,17 +81,15 @@ app.use((req, res, next) => {
     next();
 });
 
+
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
 app.use('/reservation', require(__dirname + '/routes/reservation'));
 app.use('/buyforme', require(__dirname + '/routes/buyforme'));
 app.use('/buyforme_fake_data', require(__dirname + '/routes/insert_buyforme_fake_data'));
 app.use('/res', require(__dirname + '/routes/res-item'));
-app.use("/message",require(__dirname + "/routes/message"));
-app.use("/forum2",require(__dirname+"/routes/forum2"))
 app.use("/forum", require(__dirname + "/routes/forum"));
-app.use("/news2",require(__dirname + "/routes/news2"));
-app.use("/news",require(__dirname + "/routes/news1"));
+app.use("/news",require(__dirname + "/routes/news"));
 
 // This block is for ecshop
 const ec_orm = require("./models");

@@ -116,12 +116,13 @@ require("./routes/ecshop")(app);
 
 // 餐廳管理login
 app.post("/res-login", async (req, res) => {
+
     const output = {
         success: false,
         error: "",
         data: null,
     };
-
+    // $2a$10$aESgOegUnuwDDey0YXhBheMqOSJYNhmVvftDOM4mVHk9bzR9Oe1Ki
     // 1、先檢查有沒有送email跟password過來
     if (!req.body.account || !req.body.password) {
         output.error = "沒有帳號或密碼";
@@ -131,15 +132,25 @@ app.post("/res-login", async (req, res) => {
     // 2、檢查資料庫的sql
     const sql = "SELECT * FROM shops WHERE account=?";
     const [rows] = await db.query(sql, [req.body.account]);
+    console.log(rows)
+
+    console.log(req.body.password)
+    console.log(rows[0].password)
+    const verify = await bcrypt.compare(req.body.password,rows[0].password)
+    console.log(verify)
+
     if (!rows.length) {
         output.error = "帳號或密碼錯誤";
         return res.json(output);
     }
     output.message = "有此帳號";
-    if (req.body.password !== rows[0].password) {
-        output.error = "帳號或密碼錯誤";
-        return res.json(output);
-    } else {
+    
+    // const verify = false;
+    // if(bcrypt.compareSync(req.body.password,rows[0].password))
+    if (verify == false) {
+        output.error = '帳號或密碼錯誤';
+        return res.json(output)
+    }else{
         // 帳號密碼皆正確，發送token
         const token = jwt.sign(
             {
@@ -160,7 +171,29 @@ app.post("/res-login", async (req, res) => {
         };
         return res.json(output);
     }
-});
+    // if (req.body.password !== rows[0].password) {
+    //     output.error = '帳號或密碼錯誤';
+    //     return res.json(output)
+    // }else{
+    //     // 帳號密碼皆正確，發送token
+    //     const token = jwt.sign({
+    //         id:rows[0].sid,
+    //         account: rows[0].account
+    //     },process.env.JWT_SECRET)
+
+    //     output.success = true;
+    //     output.token = token;
+    //     output.rows = rows;
+    //     output.data = {
+    //         id: rows[0].sid,
+    //         account: rows[0].account,
+    //         shop:rows[0].shop,
+    //         token
+    //     }
+    //     return res.json(output)
+    // }
+})
+
 
 // 設定靜態內容的資料夾
 app.get("*", express.static("public"));

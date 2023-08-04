@@ -327,7 +327,7 @@ router.get("/bookingRecord", async (req, res) => {
     res.json(rows);
 });
 
-// 拿到會員訂位的API
+// 拿到會員商城訂單的API
 router.get("/mailRecord", async (req, res) => {
     const output = {
         success: false,
@@ -350,6 +350,24 @@ router.get("/mailRecord", async (req, res) => {
     `;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
+    res.json(rows);
+});
+
+// 拿到會員詳細商城訂單的API
+router.get("/mailDetail", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql = `SELECT orderdetail.amount , item.item_name, item.img_url, item.price FROM orderdetail JOIN item ON orderdetail.item_id = item.item_id WHERE orderdetail.order_id = ?`;
+    const [rows] = await db.query(sql, req.get("id"));
     res.json(rows);
 });
 

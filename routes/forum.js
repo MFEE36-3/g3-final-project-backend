@@ -4,6 +4,8 @@ const dayjs = require("dayjs");
 const router = express.Router();
 const upload = require(__dirname + "/../modules/img-upload");
 const multipartParser = upload.none();
+const forumUploadImg =require(__dirname + '/../modules/forumupload');
+const multer = require('multer');
 
 // 取得所有留言及論壇資料的路由
 router.get("/", async (req, res) => {
@@ -52,12 +54,16 @@ router.get("/", async (req, res) => {
 });
 
 // 新增文章的api
-router.post("/add", multipartParser, async (req, res) => {
+router.post("/add", forumUploadImg.single('preImg'), async (req, res) => {
   let output = {
     success: true,
   };
-
-  const { header, content, photo, user_id } = req.body;
+  console.log(req.file)
+  let photo = '';
+  if(req.file && req.file.filename){
+    photo = req.file.filename
+  }
+  const { header, content, user_id } = req.body;
   // 將文章資料插入到資料庫中
   const sql = `
     INSERT INTO forum (header, content, photo, user_id, publishedTime)
@@ -71,7 +77,28 @@ router.post("/add", multipartParser, async (req, res) => {
     return res.json(output);
   }
 });
+// router.post("/previewImg", forumUploadImg.single("preImg"), async (req, res) => {
+//   // const filename = req.file.filename
+//   let output = {
+//     success: true,
+//   };
 
+//   const { header, content, photo, user_id } = req.body;
+//   // 將文章資料插入到資料庫中
+//   const sql = `
+//     INSERT INTO forum (header, content, photo, user_id, publishedTime)
+//     VALUES (?,?,?,?,NOW())`;
+//   try {
+//     await db.query(sql, [header, content, photo, user_id]);
+//     return res.json(output);
+//   } catch (error) {
+//     console.error(error);
+//     output.success = false;
+//     return res.json(output);
+//   }
+//   res.json(req.file);
+//   console.log(req.file);
+// });
 router.get("/forum/:forum_sid", async (req, res) => {
   const { forum_sid } = req.params;
 
@@ -183,13 +210,13 @@ router.post("/addmessage", multipartParser, async (req, res) => {
     success: true,
   };
 
-  const {  user_id , comment_content } = req.body;
+  const { user_id, comment_content } = req.body;
   // 將留言資料插入到資料庫中
   const sql = `
     INSERT INTO message ( user_id ,comment_content , publishedTime)
     VALUES (?,?,NOW())`;
   try {
-    await db.query(sql, [ user_id , comment_content ]);
+    await db.query(sql, [user_id, comment_content]);
     return res.json(output);
   } catch (error) {
     console.error(error);

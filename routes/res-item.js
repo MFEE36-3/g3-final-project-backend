@@ -14,7 +14,7 @@ const transporter = require(__dirname + '/../modules/config.js').transporter
 
 // 將html與api分開
 
-const getListData = async (req, shop_id) => {
+const getListData = async (req, shop_id, keyword) => {
 
     let output = {
         redirect: "",
@@ -31,7 +31,7 @@ const getListData = async (req, shop_id) => {
     let page = req.query.page ? +req.query.page : 1;
 
     // 做搜尋功能:用queryString做
-    let keyword = req.query.keyword || '';
+    // let keyword = req.query.keyword || '';
 
     // 防範如果page是NaN或0會回傳true
     const baseUrl = req.baseUrl
@@ -559,6 +559,17 @@ router.post('/item-management/', async (req, res) => {
 
     output.rows.forEach(i => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
+        if(i.food_cate == 1){
+            i.food_cate = '前菜'
+        }else if (i.food_cate == 2){
+            i.food_cate = '主菜'
+        }else if (i.food_cate == 3){
+            i.food_cate = '甜點'
+        }else if (i.food_cate == 4){
+            i.food_cate = '飲料'
+        }else if (i.food_cate == 5){
+            i.food_cate = '湯品'
+        }
     })
 
     console.log(output)
@@ -642,6 +653,88 @@ router.delete('/item-management/deleteItem/:food_id', async (req, res) => {
     const [result] = await db.query(sql, [food_id])
 
     res.json(result)
+})
+
+// 餐廳商品關鍵字搜尋(get)
+router.get('/:Keyword', async(req,res)=>{
+    // console.log(req.params)                 // { Keyword: 'item-management' }
+    // console.log(req.query)                  // { keyword: 'qwerty', shop_id: '1' }
+    const keyword = req.query.keyword || '' // string
+    const shop_id = req.query.shop_id || 0
+    const output = await getListData(req,shop_id,keyword)
+    output.rows.forEach(i => {
+        i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
+    })
+
+    console.log(output)
+    // {
+    //     redirect: '',
+    //     totalRows: 5,
+    //     perPage: 50,
+    //     totalPages: 1,
+    //     page: 1,
+    //     rows: [
+    //       {
+    //         food_id: 139,
+    //         shop_id: 1,
+    //         food_img: 'default_image.jpg',
+    //         food_cate: 2,
+    //         food_title: '魯肉飯',
+    //         food_des: '經典台灣小吃，滷肉飯搭配滷肉、醬油蛋、酸菜等配料。',
+    //         food_price: 50,
+    //         food_note: null,
+    //         create_time: null
+    //       },
+    //       {
+    //         food_id: 48,
+    //         shop_id: 1,
+    //         food_img: 'f5d5f6c2-5409-486c-872c-caa65bcac69a.jpg',
+    //         food_cate: 2,
+    //         food_title: '滷肉飯便當',
+    //         food_des: '除了經典滷肉，還有均衡的蔬菜!',
+    //         food_price: 80,
+    //         food_note: '',
+    //         create_time: 2023-07-26T09:58:06.000Z
+    //       },
+    //       {
+    //         food_id: 46,
+    //         shop_id: 1,
+    //         food_img: '7c1f7267-4585-412b-8e72-6732378f1494.jpg',
+    //         food_cate: 2,
+    //         food_title: '滷肉飯(小)',
+    //         food_des: '小碗滷肉飯，讓你齒間留香!',
+    //         food_price: 40,
+    //         food_note: '',
+    //         create_time: 2023-07-26T09:56:25.000Z
+    //       },
+    //       {
+    //         food_id: 45,
+    //         shop_id: 1,
+    //         food_img: '08dc5252-d685-4dd3-a919-e786cffe7378.jpg',
+    //         food_cate: 2,
+    //         food_title: '滷肉飯(大)',
+    //         food_des: '傳統滷肉飯，大碗滿意!',
+    //         food_price: 60,
+    //         food_note: '',
+    //         create_time: 2023-07-26T09:55:04.000Z
+    //       },
+    //       {
+    //         food_id: 1,
+    //         shop_id: 1,
+    //         food_img: 'img1.jpg',
+    //         food_cate: 2,
+    //         food_title: '大碗滷肉飯',
+    //         food_des: '香味四溢的滷肉飯，讚不絕口',
+    //         food_price: 50,
+    //         food_note: '使用台灣豬，敬請安心食用',
+    //         create_time: null
+    //       }
+    //     ],
+    //     baseUrl: '/res',
+    //     keyword: '滷肉'
+    //   }
+    res.json(output)                     // { keyword: 'qwerty' }
+
 })
 
 // 商家取得訂單資料

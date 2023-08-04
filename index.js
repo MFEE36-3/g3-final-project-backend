@@ -98,6 +98,18 @@ app.use('/res', require(__dirname + '/routes/res-item'));
 app.use("/forum", require(__dirname + "/routes/forum"));
 app.use("/news",require(__dirname + "/routes/news"));
 
+// This block is for ecshop
+const ec_orm = require("./models");
+ec_orm.sequelize.sync()
+    .then(() => {
+        console.log("Synced db.");
+    })
+    .catch((err) => {
+        console.log("Failed to sync db: " + err.message);
+    });
+require("./routes/ecshop")(app);
+// End of ecshop
+
 // 餐廳管理login
 app.post("/res-login", async (req, res) => {
     const output = {

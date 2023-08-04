@@ -308,4 +308,49 @@ router.get("/favoritetStore", async (req, res) => {
     res.json(rows);
 });
 
+// 拿到會員訂位的API
+router.get("/bookingRecord", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql = `SELECT b.id, b.shop_id, b.booking_date, b.booking_time, b.booking_number, b.rating, b.memo, b.status, b.create_at, s.shop, s.photo, s.location FROM booking AS b INNER JOIN shops AS s ON b.shop_id = s.sid WHERE b.id = ?`;
+
+    const [rows] = await db.query(sql, [res.locals.jwtData.id]);
+    res.json(rows);
+});
+
+// 拿到會員訂位的API
+router.get("/mailRecord", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql = `SELECT o.order_id, o.address_id, o.member_id, a.address, o.status, o.created_at,
+    SUM(od.price * od.amount) AS total_price
+    FROM orders AS o
+    JOIN addresses AS a ON o.address_id = a.address_id
+    JOIN orderdetail AS od ON o.order_id = od.order_id
+    WHERE o.member_id = ?
+    GROUP BY o.order_id
+    `;
+
+    const [rows] = await db.query(sql, [res.locals.jwtData.id]);
+    res.json(rows);
+});
+
 module.exports = router;

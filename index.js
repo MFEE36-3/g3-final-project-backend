@@ -88,6 +88,7 @@ app.post("/previewImg", upload.single("preImg"), async (req, res) => {
     console.log(req.file);
 });
 
+
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
 app.use('/reservation', require(__dirname + '/routes/reservation'));

@@ -566,7 +566,7 @@ router.post('/item-management/', async (req, res) => {
 })
 
 // 商品排序:由新到舊
-router.get('/item-management/DESC', async (req, res) => {
+router.post('/item-management/DESC', async (req, res) => {
     const output = await getListData(req, req.body.id);
     if (output.redirect) {
         return res.redirect(output.redirect)
@@ -580,7 +580,8 @@ router.get('/item-management/DESC', async (req, res) => {
     res.json(output)
 })
 // 商品排序:由舊到新
-router.get('/item-management/ASC', async (req, res) => {
+router.post('/item-management/ASC', async (req, res) => {
+    console.log('getListDataASC')
     const output = await getListDataASC(req, parseInt(req.body.id));
     if (output.redirect) {
         return res.redirect(output.redirect)
@@ -592,6 +593,12 @@ router.get('/item-management/ASC', async (req, res) => {
 
     console.log(output)
     res.json(output)
+})
+
+// 商品編輯:搜尋商品
+router.post('/item-search', async(req,res)=>{
+    res.json(req.body)
+    const keyword = req.body.keyword;
 })
 
 // 餐廳編輯商品

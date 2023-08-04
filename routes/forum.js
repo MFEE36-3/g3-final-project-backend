@@ -36,7 +36,7 @@ router.get("/", async (req, res) => {
       mi.nickname,
       mi.photo AS user_photo
   FROM forum f
-  JOIN member_info mi ON f.forum_sid = mi.sid;
+  JOIN member_info mi ON f.user_id = mi.sid;
   
       `;
       const [messages] = await db.query(sql);
@@ -113,7 +113,7 @@ router.get("/forum/:forum_sid", async (req, res) => {
   mi.nickname,
   mi.photo AS user_photo
 FROM forum f
-JOIN member_info mi ON f.forum_sid = mi.sid
+JOIN member_info mi ON f.user_id = mi.sid
 WHERE f.forum_sid = ${forum_sid}`;
   const [forum_data] = await db.query(forum_sql);
 
@@ -181,7 +181,7 @@ router.get("/message", async (req, res) => {
   COALESCE(c.comment_count, 0) AS comment_count,
   COALESCE(l.like_count, 0) AS like_count
 FROM forum f
-JOIN member_info mi ON f.forum_sid = mi.sid
+JOIN member_info mi ON f.user_id = mi.sid
 LEFT JOIN (
     SELECT forum_sid, COUNT(comment_content) AS comment_count
     FROM message

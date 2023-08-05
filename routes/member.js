@@ -303,7 +303,7 @@ router.get("/favoritetStore", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT s.shop AS restaurant_name, s.rating AS restaurant_rating, s.photo AS restaurant_photo, s.location AS restaurant_location FROM favorite f JOIN shops s ON f.shop_id = s.sid WHERE f.id = ?`;
+    const sql = `SELECT s.sid AS sid, s.shop AS restaurant_name, s.rating AS restaurant_rating, s.photo AS restaurant_photo, s.location AS restaurant_location FROM favorite f JOIN shops s ON f.shop_id = s.sid WHERE f.id = ?`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
@@ -396,7 +396,7 @@ router.get("/mailDetail", async (req, res) => {
     res.json(rows);
 });
 
-// 改會員暱稱的API
+// 批量放會員暱稱假資料的API
 router.post("/nickname", async (req, res) => {
     const nickname = [
         "沒問題的啦",
@@ -613,7 +613,7 @@ router.post("/nickname", async (req, res) => {
     }
 });
 
-// 改會員圖片的API
+// 批量放會員照片假資料的API
 router.post("/mphoto", async (req, res) => {
     try {
         // 假設圖片檔案名稱的起始編號是 1，結束編號是 100

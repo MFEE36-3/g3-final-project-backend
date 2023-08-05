@@ -5,7 +5,7 @@ const sequelize = new Sequelize(dbConfig.database, dbConfig.user, dbConfig.passw
   host: dbConfig.host,
   port: dbConfig.port,
   dialect: dbConfig.dialect,
-  operatorsAliases: false,
+  //operatorsAliases: false,
 
   pool: {
     max: dbConfig.pool.max,
@@ -21,6 +21,10 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.shop = require("./shop")(sequelize, Sequelize);
+db.member = require("./member")(sequelize, Sequelize);
 
+// define the associations
+db.shop.orders.belongsTo(db.member.user_coupon, {foreignKey: 'coupon_sid', targetKey: 'get_coupon_sid'});
+db.member.user_coupon.hasMany(db.shop.orders, {foreignKey: 'coupon_sid', sourceKey: 'get_coupon_sid'});
 
 module.exports = db;

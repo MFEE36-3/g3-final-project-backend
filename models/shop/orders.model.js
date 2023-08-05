@@ -30,6 +30,12 @@ module.exports = (sequelize, Sequelize) => {
         status: {
             type: Sequelize.INTEGER,
         },
+        amount: {
+            type: Sequelize.INTEGER,
+        },
+        shipfee: {
+            type: Sequelize.INTEGER,
+        },
         created_at: {
             type: Sequelize.DATE,
         },

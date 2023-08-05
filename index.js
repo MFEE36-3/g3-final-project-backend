@@ -93,10 +93,7 @@ app.post("/previewImg", upload.single("preImg"), async (req, res) => {
 app.use("/member", require(__dirname + "/routes/member"));
 app.use("/reservation", require(__dirname + "/routes/reservation"));
 app.use("/buyforme", require(__dirname + "/routes/buyforme"));
-app.use(
-    "/buyforme_fake_data",
-    require(__dirname + "/routes/insert_buyforme_fake_data")
-);
+app.use("/buyforme_fake_data",require(__dirname + "/routes/insert_buyforme_fake_data"));
 app.use("/res", require(__dirname + "/routes/res-item"));
 app.use("/forum", require(__dirname + "/routes/forum"));
 app.use("/news", require(__dirname + "/routes/news"));

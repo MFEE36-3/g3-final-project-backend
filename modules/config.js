@@ -26,6 +26,8 @@ var linepay = {
     return_host: process.env.LINEPAY_RETURN_HOST,
     return_confirm_url: process.env.LINEPAY_RETURN_CONFIRM_URL,
     return_cancel_url: process.env.LINEPAY_RETURN_CANCEL_URL,
+    confirm_client_url: process.env.LINEPAY_CONFIRM_OK,
+    cancel_client_url: process.env.LINEPAY_CONFIRM_FAIL
 }
 
 let transport

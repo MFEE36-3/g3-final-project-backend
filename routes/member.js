@@ -46,6 +46,7 @@ router.post("/login", async (req, res) => {
         sid: rows[0].sid,
         account: rows[0].account,
         nickname: rows[0].nickname,
+        photo: rows[0].photo,
         length: req.body.password.length,
         token,
     };
@@ -303,6 +304,30 @@ router.get("/favoritetStore", async (req, res) => {
     }
 
     const sql = `SELECT s.shop AS restaurant_name, s.rating AS restaurant_rating, s.photo AS restaurant_photo, s.location AS restaurant_location FROM favorite f JOIN shops s ON f.shop_id = s.sid WHERE f.id = ?`;
+
+    const [rows] = await db.query(sql, [res.locals.jwtData.id]);
+    res.json(rows);
+});
+
+// 拿到會員收藏貼文的API
+router.get("/favoritePost", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql = `SELECT forum_like.*, forum.header, forum.publishedTime, member_info.nickname
+    FROM forum_like
+    JOIN forum ON forum_like.forum_sid = forum.forum_sid
+    JOIN member_info ON member_info.sid = forum.user_id
+    WHERE forum_like.user_id = ?;
+    `;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);

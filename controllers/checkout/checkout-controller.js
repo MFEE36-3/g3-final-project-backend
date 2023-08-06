@@ -179,6 +179,13 @@ exports.simpleCheckout = async (req, res) => {
             case 'wallet':
                 // update wallet
                 await walletCheckout(order, total_price, discount, shipfee);
+                await Member.member_info.update({
+                    wallet: member.wallet - (total_price + discount + shipfee)
+                }, {
+                    where: {
+                        sid: userId
+                    }
+                }, { transaction });
                 break;
             default:
                 break;

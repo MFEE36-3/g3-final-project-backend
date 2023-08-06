@@ -147,6 +147,15 @@ WHERE f.forum_sid = ${forum_sid}`;
   return res.json(output);
 });
 
+// 在forum一載入就抓會員有哪些讚
+router.post('/get-member-like', async(req,res)=>{
+  // res.json(req.body)
+  const sql = "SELECT * FROM `forum_like` WHERE user_id=?;"
+  const [row] = await db.query(sql,[req.body.sid])
+
+  res.json(row)
+})
+
 router.get("/message", async (req, res) => {
   console.log(req.query.forum_keyword);
 
@@ -204,76 +213,109 @@ LIMIT ${offset}, ${limit}
   res.json(article);
   console.log(article);
 });
+
+// 在留言拿到使用者頭像
+router.post('/getUserPhoto', async(req,res)=>{
+  res.json(req.body)
+})
+
 // 新增留言的api
-router.post("/addmessage", multipartParser, async (req, res) => {
+router.post("/addmessage", async (req, res) => {
+
+  // res.json(req.body)
+
   let output = {
     success: true,
+    error:'',
+    data:null
   };
 
-  const { user_id, comment_content } = req.body;
-  // 將留言資料插入到資料庫中
-  const sql = `
-    INSERT INTO message ( user_id ,comment_content , publishedTime)
-    VALUES (?,?,NOW())`;
-  try {
-    await db.query(sql, [user_id, comment_content]);
-    return res.json(output);
-  } catch (error) {
-    console.error(error);
-    output.success = false;
-    return res.json(output);
-  }
+  const { member_id, content,forum_sid } = req.body;
+
+  // // 將留言資料插入到資料庫中
+  const sql = "INSERT INTO"+
+  " `message`(`publishedTime`, `user_id`, `forum_sid`, `comment_content`)"+
+  " VALUES (NOW(),?,?,?)";
+
+  const [result] = await db.query(sql,[member_id,forum_sid,content])
+  output.data = result
+  res.json(output)
 });
 //處理蒐藏愛心的API
 router.post("/handle-like-list", async (req, res) => {
-  let output = {
-    success: true,
-  };
-  let member = "";
-  if (res.locals.jwtData) {
-    member = res.locals.jwtData.id;
-  }
-  const receiveData = req.body.data;
 
-  console.log(receiveData);
-
-  let deleteLike = [];
-  let addLike = [];
-  //確定該會員有經過jwt認證並且有傳資料過來，才去資料庫讀取資料
-  if (member && receiveData.length > 0) {
-    const sql_prelike = `SELECT forum_sid FROM forum_favorite WHERE member_sid="${member}"`;
-    const [prelike_rows] = await db.query(sql_prelike);
-    const preLikeRestaurants = prelike_rows.map((v) => {
-      return v.rest_sid;
-    });
-
-    //將收到前端的資料與原先該會員收藏列表比對，哪些是要被刪除，哪些是要被增加
-    deleteLike = receiveData
-      .filter((v) => preLikeRestaurants.includes(v.forum_sid))
-      .map((v) => `"${v.forum_sid}"`);
-    addLike = receiveData.filter(
-      (v) => !preLikeRestaurants.includes(v.forum_sid)
-    );
-  }
-
-  if (deleteLike.length > 0) {
-    const deleteItems = deleteLike.join(", ");
-    const sql_delete_like = `DELETE FROM forum_favorite WHERE member_sid="${member}" AND forum_sid IN (${deleteItems})`;
-    const [result] = await db.query(sql_delete_like);
-    output.success = !!result.affectedRows;
+  // res.json(req.body)
+  const clickHeart = req.body.clickHeart
+  const body = req.body
+  // clickHeart == true:要新增收藏
+  if (clickHeart) {
+    const checkSQL = "SELECT * FROM `forum_like` WHERE user_id=? AND forum_sid=?"
+    const [row] = await db.query(checkSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    if (row.length) {
+      // 資料庫已經有這個按讚的資料了，直接return空值
+      return res.json(req.body)
+    } else {
+      // 資料庫沒有這筆資料:新增進去
+      const insertSQL = "INSERT INTO `forum_like`(`user_id`, `forum_sid`) VALUES (?,?)"
+      const [result] = await db.query(insertSQL, [
+        req.body.member_id,
+        req.body.article_sid
+      ])
+      console.log('insert : ' + result)
+    }
+  } else {
+    // clickHeart == false:要移除收藏
+    const deleteSQL = "DELETE FROM `forum_like` WHERE user_id=? AND forum_sid=?;"
+    const [row] = await db.query(deleteSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    console.log('delete row : ' + row)
   }
 
-  if (addLike.length > 0) {
-    const sql_add_like = ` INSERT INTO forum_favorite(member_sid, forum_sid, date ) VALUES ?`;
-    const insertLike = addLike.map((v) => {
-      return [member, v.rest_sid, res.toDatetimeString(v.time)];
-    });
-
-    const [result] = await db.query(sql_add_like, [insertLike]);
-    output.success = !!result.affectedRows;
-  }
-  res.json(output);
+  res.json(req.body)
 });
+
+//處理蒐藏收藏的api
+router.post("/handle-collect-list", async(req,res) => {
+
+  const clickCollect = req.body.clickCollect
+  const body = req.body
+  // clickHeart == true:要新增收藏
+  if (clickCollect) {
+    const checkSQL = "SELECT `member_sid`, `forum_sid`, `date` FROM `forum_favorite` WHERE `member_sid` = ? AND `forum_sid` = ?;"
+    const [row] = await db.query(checkSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    if (row.length) {
+      // 資料庫已經有這個按讚的資料了，直接return空值
+      return res.json(req.body)
+    } else {
+      // 資料庫沒有這筆資料:新增進去
+      const insertSQL = "INSERT INTO `forum_favorite`(`member_sid`, `forum_sid`, `date`) VALUES (?,?,NOW())"
+      const [result] = await db.query(insertSQL, [
+        req.body.member_id,
+        req.body.article_sid
+      ])
+      console.log('insert : ' + result)
+    }
+  } else {
+    // clickHeart == false:要移除收藏
+    const deleteSQL = "DELETE FROM `forum_favorite` WHERE member_sid=? AND forum_sid=?;"
+    const [row] = await db.query(deleteSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    console.log('delete row : ' + row)
+  }
+
+  res.json(req.body)
+})
+
 //讀取收藏清單API
 router.get("/show-like", async (req, res) => {
   let output = {

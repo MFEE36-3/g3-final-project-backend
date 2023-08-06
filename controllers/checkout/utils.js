@@ -4,13 +4,15 @@ const Base64 = require('crypto-js/enc-base64');
 const linepay = require('../../modules/config').linepay;
 
 
-function createLinePayBody(order) {
+function createLinePayBody(order, confirm_url = null, cancel_url = null) {
+    confirm_url = confirm_url || `${linepay.return_host}${linepay.return_confirm_url}`;
+    cancel_url = cancel_url || `${linepay.return_host}${linepay.return_cancel_url}`;
     return {
       ...order,
       currency: 'TWD',
       redirectUrls: {
-        confirmUrl: `${linepay.return_host}${linepay.return_confirm_url}`,
-        cancelUrl: `${linepay.return_host}${linepay.return_cancel_url}`,
+        confirmUrl: confirm_url,
+        cancelUrl: cancel_url,
       },
     };
   }
@@ -34,10 +36,10 @@ function createSignature(uri, linePayBody) {
     return headers;
 }
 
-async function linepayRequest(order) {
+async function linepayRequest(order, confirm_url = null, cancel_url = null) {
     try {
         // 建立 LINE Pay 請求規定的資料格式
-        const linePayBody = createLinePayBody(order);
+        const linePayBody = createLinePayBody(order, confirm_url, cancel_url);
   
         // CreateSignature 建立加密內容
         const uri = '/payments/request';

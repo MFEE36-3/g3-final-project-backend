@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var checkoutController = require('../../controllers/checkout/checkout-controller');
 var linepayController = require('../../controllers/checkout/linepay-controller');
+var topupController = require('../../controllers/checkout/topup-controller');
 
 
 router.get('/linepay/confirm', linepayController.confirmCheckout);
@@ -17,5 +18,7 @@ router.use((req, res, next) => {
     next();
 });
 router.post('/', checkoutController.simpleCheckout);
+router.post('/easytopup', topupController.easy_topup);
+router.post('/linepaytopup', topupController.linepay_topup);
 
 module.exports = router;

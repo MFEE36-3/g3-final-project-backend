@@ -92,11 +92,11 @@ router.post('/buyforme', async (req, res) => {
 
     const { member_id } = req.body
 
-    const sql = `SELECT open_for_you.meet_place,buy_for_me.order_sid,member_info.nickname,open_for_you.meet_time,buy_for_me.order_status,open_for_you.open_sid FROM buy_for_me 
+    const sql = `SELECT open_for_you.meet_place,buy_for_me.order_sid,member_info.nickname,open_for_you.meet_time,buy_for_me.order_status,buy_for_me.order_amount,open_for_you.open_sid,open_for_you.open_member_id FROM buy_for_me 
     JOIN open_for_you ON buy_for_me.open_sid = open_for_you.open_sid
     JOIN member_info ON member_info.sid = open_for_you.open_member_id
     WHERE buy_for_me.order_member_id = ${member_id}
-    HAVING buy_for_me.order_status = 1
+    HAVING buy_for_me.order_status IN (1,2) 
     ORDER BY open_for_you.meet_time ASC`;
     [arr1] = await db.query(sql);
 
@@ -121,6 +121,67 @@ router.post('/buyforme', async (req, res) => {
 
     output = { ...output, rows }
 
+    return res.json(output);
+});
+
+// 拿開團紀錄及跟團者訊息
+router.post('/openforyou_followers', async (req, res) => {
+
+    let output = {
+        rows: []
+    }
+
+    const { member_id } = req.body
+
+    //拿到開團數量 單號 地點 時間 店家id 店名 跑腿費 
+    //用 open_sid 跟 arr2 跑 for 
+    const sql = `SELECT open_for_you.open_sid,open_for_you.meet_time,open_for_you.meet_place,open_for_you.target_store,open_for_you.tip,shops.shop FROM open_for_you 
+    JOIN shops ON open_for_you.target_store = shops.sid
+    WHERE open_member_id = ${member_id} 
+    ORDER BY open_for_you.open_sid ASC`;
+    [arr1] = await db.query(sql);
+
+    //拿到跟單數量 單號 暱稱 總額  (排除訂單總額只有跑腿費的訂單)
+    //用 order_sid 跟 arr3 跑 for  
+    const sql2 = `SELECT open_for_you.open_sid,buy_for_me.order_sid,buy_for_me.nickname,buy_for_me.mobile_number,buy_for_me.order_amount,buy_for_me.order_instructions FROM open_for_you 
+    JOIN buy_for_me ON open_for_you.open_sid = buy_for_me.open_sid AND buy_for_me.order_amount != open_for_you.tip
+    WHERE open_member_id = ${member_id}  
+    ORDER BY buy_for_me.order_sid ASC`;
+    [arr2] = await db.query(sql2);
+
+    //拿到跟單總明細
+    const sql3 = `SELECT buy_for_me.order_sid,buy_for_me_detail.order_quantity,food_items.food_title FROM open_for_you 
+    JOIN buy_for_me ON open_for_you.open_sid =buy_for_me.open_sid
+    JOIN buy_for_me_detail ON buy_for_me.order_sid = buy_for_me_detail.order_sid
+    JOIN shops ON open_for_you.target_store = shops.sid
+    JOIN food_items ON food_items.food_id = buy_for_me_detail.order_food  
+    WHERE open_member_id = ${member_id} 
+    ORDER BY open_for_you.meet_time ASC`;
+    [arr3] = await db.query(sql3);
+
+    const rows = arr1.map((v) => {
+
+        const orders = [];
+
+        for (let i = 0; i < arr2.length; i++) {
+
+            const order_detail = [];
+
+            for (let j = 0; j < arr3.length; j++) {
+                if (arr2[i].order_sid === arr3[j].order_sid) {
+                    order_detail.push([arr3[j].food_title, arr3[j].order_quantity])
+                }
+            }
+
+            if (v.open_sid === arr2[i].open_sid) {
+                orders.push([arr2[i].nickname, order_detail, arr2[i].order_instructions, arr2[i].order_amount, arr2[i].mobile_number])
+            }
+        }
+
+        return ({ ...v, orders })
+    })
+
+    output = { ...output, rows }
     return res.json(output);
 });
 
@@ -219,7 +280,7 @@ router.post('/setbuyforme', async (req, res) => {
 
     // TODO: 檢查資料格式
 
-    const { order_member_id, nickname, mobile_number, order_amount, order_instructions, order_detail, open_sid, order_status } = req.body;
+    const { order_sid, nickname, } = req.body;
 
     if (order_member_id === 0) return res.json('請先登入');
 
@@ -237,13 +298,7 @@ router.post('/setbuyforme', async (req, res) => {
         order_status
     ])
 
-    // 獲取最新插入的序號
-    const [lastInsertedIdResult] = await db.query('SELECT LAST_INSERT_ID() AS last_id');
-    const order_sid = lastInsertedIdResult[0].last_id;
-    
-
-
-    const sq2 = `INSERT INTO buy_for_me_detail
+    const sql2 = `INSERT INTO buy_for_me_detail
     (order_sid,order_food,order_quantity,order_price)
     VALUES(?,?,?,?)`;
 
@@ -251,7 +306,7 @@ router.post('/setbuyforme', async (req, res) => {
     const result2 = await Promise.all(
 
         order_detail.map(async (v) => {
-            const response = await db.query(sq2, [
+            const response = await db.query(sql2, [
                 order_sid,
                 v.food_id,
                 v.food_quantity,
@@ -269,6 +324,56 @@ router.post('/setbuyforme', async (req, res) => {
         postData: req.body
     })
 });
+
+
+// 完成取餐 & 撥款進會員錢包 & 寫錢包紀錄
+router.post('/finishbuyforme', async (req, res) => {
+
+    // TODO: 檢查資料格式
+
+    const { order_sid, open_member_id, order_amount } = req.body;
+
+
+    //把錢轉給跑腿者
+    const sql = `UPDATE member_info 
+    SET wallet = wallet + ?
+    WHERE sid = ?`;
+
+    const result = await db.query(sql, [
+        order_amount,
+        open_member_id
+    ])
+
+    //寫錢包紀錄
+    const sql2 = `INSERT INTO member_wallet_record
+    (member_id,amount,content,add_time) 
+    VALUES(?,?,?,NOW())`;
+
+    const result2 = await db.query(sql2, [
+        open_member_id,
+        order_amount,
+        '訂單費用加跑腿費'
+    ])
+
+
+    //更改自己的訂單狀態
+    const sql3 = `UPDATE buy_for_me 
+    SET order_status = 2
+    WHERE order_sid = ?`;
+
+    const result3 = await db.query(sql3, [
+        order_sid
+    ])
+
+    res.json({
+        result,
+        result2,
+        result3,
+        postData: req.body
+    })
+});
+
+
 
 
 

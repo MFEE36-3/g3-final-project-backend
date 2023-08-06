@@ -89,7 +89,9 @@ Json format would as follow:
         "phone_number": "123-456-7890"
     },
     "payment_info": {
-        "payment_type": "wallet"
+        "payment_type": "wallet",
+        "coupon_sid": 1 | null,
+        "shipfee": 60 | null (default 60)
     }
 }
 ```

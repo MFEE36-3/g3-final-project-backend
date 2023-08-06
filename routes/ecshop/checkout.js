@@ -1,10 +1,11 @@
 var express = require('express');
 var router = express.Router();
-var checkoutController = require('../../controllers/checkout-controller');
+var checkoutController = require('../../controllers/checkout/checkout-controller');
+var linepayController = require('../../controllers/checkout/linepay-controller');
 
 
-router.get('/linepay/confirm', checkoutController.confirmCheckout);
-router.get('/linepay/cancel', checkoutController.cancelCheckout);
+router.get('/linepay/confirm', linepayController.confirmCheckout);
+router.get('/linepay/cancel', linepayController.cancelCheckout);
 
 router.use((req, res, next) => {
     if (!res.locals.jwtData) {

@@ -68,14 +68,14 @@ app.use((req, res, next) => {
     const auth = req.get("Authorization");
     if (auth && auth.indexOf("Bearer ") === 0) {
         const token = auth.slice(7);
-        console.log(token);
+        // console.log(token);
         let jwtData = null;
         try {
             jwtData = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (ex) { }
+        } catch (ex) {}
         if (jwtData) {
             res.locals.jwtData = jwtData;
-            console.log("jwtData", res.locals.jwtData.id);
+            // console.log("jwtData", res.locals.jwtData.id);
         }
     }
     next();
@@ -88,21 +88,20 @@ app.post("/previewImg", upload.single("preImg"), async (req, res) => {
     console.log(req.file);
 });
 
+
 // 路由引導
 app.use("/member", require(__dirname + "/routes/member"));
-app.use('/reservation', require(__dirname + '/routes/reservation'));
-app.use('/buyforme', require(__dirname + '/routes/buyforme'));
-app.use('/buyforme_fake_data', require(__dirname + '/routes/insert_buyforme_fake_data'));
-app.use('/res', require(__dirname + '/routes/res-item'));
-app.use("/message",require(__dirname + "/routes/message"));
-app.use("/forum2",require(__dirname+"/routes/forum2"))
+app.use("/reservation", require(__dirname + "/routes/reservation"));
+app.use("/buyforme", require(__dirname + "/routes/buyforme"));
+app.use("/buyforme_fake_data",require(__dirname + "/routes/insert_buyforme_fake_data"));
+app.use("/res", require(__dirname + "/routes/res-item"));
 app.use("/forum", require(__dirname + "/routes/forum"));
-app.use("/news2",require(__dirname + "/routes/news2"));
-app.use("/news",require(__dirname + "/routes/news1"));
+app.use("/news", require(__dirname + "/routes/news"));
 
 // This block is for ecshop
 const ec_orm = require("./models");
-ec_orm.sequelize.sync()
+ec_orm.sequelize
+    .sync()
     .then(() => {
         console.log("Synced db.");
     })
@@ -114,12 +113,13 @@ require("./routes/ecshop")(app);
 
 // 餐廳管理login
 app.post("/res-login", async (req, res) => {
+
     const output = {
         success: false,
         error: "",
         data: null,
     };
-
+    // $2a$10$aESgOegUnuwDDey0YXhBheMqOSJYNhmVvftDOM4mVHk9bzR9Oe1Ki
     // 1、先檢查有沒有送email跟password過來
     if (!req.body.account || !req.body.password) {
         output.error = "沒有帳號或密碼";
@@ -129,20 +129,33 @@ app.post("/res-login", async (req, res) => {
     // 2、檢查資料庫的sql
     const sql = "SELECT * FROM shops WHERE account=?";
     const [rows] = await db.query(sql, [req.body.account]);
+    console.log(rows)
+
+    console.log(req.body.password)
+    console.log(rows[0].password)
+    const verify = await bcrypt.compare(req.body.password,rows[0].password)
+    console.log(verify)
+
     if (!rows.length) {
         output.error = "帳號或密碼錯誤";
         return res.json(output);
     }
     output.message = "有此帳號";
-    if (req.body.password !== rows[0].password) {
+    
+    // const verify = false;
+    // if(bcrypt.compareSync(req.body.password,rows[0].password))
+    if (verify == false) {
         output.error = '帳號或密碼錯誤';
         return res.json(output)
     }else{
         // 帳號密碼皆正確，發送token
-        const token = jwt.sign({
-            id:rows[0].sid,
-            account: rows[0].account
-        },process.env.JWT_SECRET)
+        const token = jwt.sign(
+            {
+                id: rows[0].sid,
+                account: rows[0].account,
+            },
+            process.env.JWT_SECRET
+        );
 
         output.success = true;
         output.token = token;
@@ -150,11 +163,32 @@ app.post("/res-login", async (req, res) => {
         output.data = {
             id: rows[0].sid,
             account: rows[0].account,
-            shop:rows[0].shop,
-            token
-        }
-        return res.json(output)
+            shop: rows[0].shop,
+            token,
+        };
+        return res.json(output);
     }
+    // if (req.body.password !== rows[0].password) {
+    //     output.error = '帳號或密碼錯誤';
+    //     return res.json(output)
+    // }else{
+    //     // 帳號密碼皆正確，發送token
+    //     const token = jwt.sign({
+    //         id:rows[0].sid,
+    //         account: rows[0].account
+    //     },process.env.JWT_SECRET)
+
+    //     output.success = true;
+    //     output.token = token;
+    //     output.rows = rows;
+    //     output.data = {
+    //         id: rows[0].sid,
+    //         account: rows[0].account,
+    //         shop:rows[0].shop,
+    //         token
+    //     }
+    //     return res.json(output)
+    // }
 })
 
 

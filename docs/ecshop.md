@@ -63,7 +63,7 @@ Retrieves a list of items based on provided query parameters.
 
 ### Checkout APIs
 
-#### POST　/ecshop/checkout
+#### POST　/ecshop/checkout (NEED JWT)
 Creates an order and returns the order ID.
 Body Payload:
 1. items: Array of item_id and amount
@@ -131,6 +131,38 @@ Response:
 
 Note:
     * Need to set LINEPAY_RETURN_HOST in .env file for frone-end redirection.
+
+## Topup
+
+### POST /ecshop/checkout/easytopup (NEED JWT)
+
+Directly topup to user wallet without any order created.
+
+Body Payload:
+1. amount: topup amount
+
+Response:
+```javascript
+{
+    success: true,
+    message: "儲值成功"
+}
+```
+
+### POST /ecshop/checkout/linepaytopup (NEED JWT)
+
+Create linepay order for topup, but no validation for order, wallet would be topup before user pay in linepay.
+
+Body Payload:
+1. amount: topup amount
+
+Response:
+```javascript
+{
+    message: "Order created successful!",
+    linepay_redirect: "redirect_url"
+}
+```
 
 ### Other Refs
 

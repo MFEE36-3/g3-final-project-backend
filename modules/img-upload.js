@@ -10,7 +10,7 @@ const extMap = {
 // 定義存放在哪裡及檔名
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, __dirname + "/../public/img");
+        cb(null, __dirname + "/../public/img/member");
     },
     filename: (req, file, cb) => {
         const ext = extMap[file.mimetype]; // 利用 mimetype 決定副檔名

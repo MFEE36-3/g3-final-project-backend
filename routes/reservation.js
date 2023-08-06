@@ -223,7 +223,7 @@ router.get("/:sid", async (req, res) => {
         //取得餐廳資訊info
         const detailsql = `SELECT * FROM shops s 
         JOIN city c ON s.city = c.city_id 
-        JOIN area a ON s.area = a.area_sid 
+        JOIN area a ON s.area = a.area_id AND s.city =a.city_id
         JOIN res_cate r ON s.category = r.res_sid 
         JOIN res_opentime ro ON s.sid = ro.res_id 
         WHERE s.sid=${sid}`;

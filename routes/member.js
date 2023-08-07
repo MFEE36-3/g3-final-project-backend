@@ -322,12 +322,20 @@ router.get("/favoritePost", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT forum_like.*, forum.header, forum.publishedTime, member_info.nickname
-    FROM forum_like
-    JOIN forum ON forum_like.forum_sid = forum.forum_sid
-    JOIN member_info ON member_info.sid = forum.user_id
-    WHERE forum_like.user_id = ?;
-    `;
+    const sql = `SELECT 
+    ff.*,
+    f.header AS forum_header,
+    f.user_id AS member_id,
+    mi.nickname
+FROM
+    forum_favorite AS ff
+JOIN
+    forum AS f ON ff.forum_sid = f.forum_sid
+JOIN
+    member_info AS mi ON f.user_id = mi.sid
+WHERE
+    ff.member_sid = ?
+`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
@@ -346,7 +354,7 @@ router.get("/bookingRecord", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT b.id, b.shop_id, b.booking_date, b.booking_time, b.booking_number, b.rating, b.memo, b.status, b.create_at, s.shop, s.photo, s.location FROM booking AS b INNER JOIN shops AS s ON b.shop_id = s.sid WHERE b.id = ?`;
+    const sql = `SELECT b.*, s.shop, s.photo, s.location FROM booking AS b INNER JOIN shops AS s ON b.shop_id = s.sid WHERE b.id = ?`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
@@ -393,6 +401,63 @@ router.get("/mailDetail", async (req, res) => {
 
     const sql = `SELECT orderdetail.amount , item.item_name, item.img_url, item.price FROM orderdetail JOIN item ON orderdetail.item_id = item.item_id WHERE orderdetail.order_id = ?`;
     const [rows] = await db.query(sql, req.get("id"));
+    res.json(rows);
+});
+
+// 拿到會員外帶訂單的API
+router.get("/foodRecord", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql =
+        "SELECT `order`.* , `shops`.shop FROM `order` JOIN `shops` ON `order`.shop_id = `shops`.sid WHERE `order`.id = ?";
+
+    const [rows] = await db.query(sql, [res.locals.jwtData.id]);
+    res.json(rows);
+});
+
+// 拿到會員詳細外帶訂單的API
+router.get("/foodDetail", async (req, res) => {
+    const output = {
+        success: false,
+        error: "",
+        data: null,
+    };
+
+    if (!res.locals.jwtData) {
+        output.error = "沒有 token 驗證";
+        return res.json(output);
+    }
+
+    const sql = `SELECT order_detail.*, food_items.food_img
+    FROM order_detail
+    JOIN food_items ON order_detail.food_id = food_items.food_id
+    WHERE order_detail.order_id = ?`;
+    const [rows] = await db.query(sql, req.get("id"));
+    res.json(rows);
+});
+
+// 完成內用訂單的API
+router.post("/finishBooking", async (req, res) => {
+    const { id } = req.body;
+    const t_sql = "UPDATE booking SET status = ? WHERE booking_id = ?";
+    const [rows] = await db.query(t_sql, ["已完成", id]);
+    res.json(rows);
+});
+
+// 完成外帶訂單的API
+router.post("/finishFood", async (req, res) => {
+    const { sid } = req.body;
+    const t_sql = "UPDATE `order` SET status = ? WHERE sid = ?";
+    const [rows] = await db.query(t_sql, ["已完成", sid]);
     res.json(rows);
 });
 

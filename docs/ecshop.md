@@ -164,6 +164,48 @@ Response:
 }
 ```
 
+## Buy For me
+
+### POST /ecshop/checkout/buyforme (NEED JWT)
+
+Create order for buy for me, and return order_id, just support 'wallet' payment type.
+
+Body Payload:
+```javascript
+{
+    "open_sid": 1,
+    "nickname": "test",
+    "mobile_number": "0912-345-678",
+    "order_amount": 160, // Should be total amount of items (exclude shipfee & coupon)
+    "order_instructions": "",
+    "items": [
+        {
+            "order_food": 18,
+            "order_quantity": 1,
+            "order_price": 60
+        },
+        {
+            "order_food": 148,
+            "order_quantity": 2,
+            "order_price": 100
+        }
+    ],
+    "payment_info": {
+        "payment_type": "wallet",
+        "shipfee": 600, // If this member is VIP, shipfee would be 0
+        "coupon_sid": 55
+    }
+}
+```
+
+Response:
+```javascript
+{
+    "message": "Order created successful!",
+    "order_sid": 806
+}
+```
+
 ### Other Refs
 
 1. [Linepay Payment Request Docs](https://pay.line.me/th/developers/apis/onlineApis?locale=zh_TW)

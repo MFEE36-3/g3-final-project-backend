@@ -18,6 +18,7 @@ router.use((req, res, next) => {
     next();
 });
 router.post('/', checkoutController.simpleCheckout);
+router.post('/buyforme', checkoutController.buyForMeCheckout);
 router.post('/easytopup', topupController.easy_topup);
 router.post('/linepaytopup', topupController.linepay_topup);
 

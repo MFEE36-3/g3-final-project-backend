@@ -5,7 +5,7 @@ const { linepayRequest } = require('./utils');
 
 const Shop = db.shop;
 const Member = db.member;
-
+const BFM = db.buyforme;
 
 
 async function getCoupon(member_id, get_coupon_sid) {
@@ -222,3 +222,105 @@ exports.simpleCheckout = async (req, res) => {
     }
 }
 
+exports.buyForMeCheckout = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    const { open_sid, nickname, mobile_number, order_amount, order_instructions, items, payment_info } = req.body;
+    const userId = res.locals.jwtData.id;
+    let { payment_type, coupon_sid, shipfee } = payment_info;
+    /*
+        items: [
+            {
+                order_food: 1,
+                order_quantity: 1,
+                order_price: 100
+            },
+            {
+                order_food: 2,
+                order_quantity: 2,
+                order_price: 200
+            }
+        ]
+
+        "payment_info": {
+            "payment_type": "wallet",
+            "coupon_sid": 1 | null,
+            "shipfee": 60 | null (default 60)
+        }
+    }
+    */
+
+    try {
+        // Get member
+        const member = await Member.member_info.findOne({
+            where: {
+                sid: userId
+            }
+        });
+
+        // If member level > 1, shipfee = 0
+        if (member.level > 1) {
+            shipfee = 0;
+        }
+
+        let discount = 0;
+        // Get coupon
+        if (coupon_sid) {
+            const coupon = await getCoupon(userId, coupon_sid);
+            discount = coupon.coupon.coupon_discount;
+        }
+
+        const total_price = order_amount - discount + shipfee;
+        // Check if the wallet is enough
+        if (payment_type === 'wallet' && member.wallet < total_price) {
+            throw new Error('Not enough money');
+        }
+
+        // Create the order
+        const order = await BFM.buy_for_me.create({
+            open_sid: open_sid,
+            order_member_id: userId,
+            nickname: nickname,
+            mobile_number: mobile_number,
+            order_amount: total_price,
+            order_time: new Date(),
+            order_status: payment_type === 'wallet'? 1 : 0,
+            order_instructions: order_instructions
+        }, { transaction });
+
+        // Create the order items
+        for (const item of items) {
+            await BFM.buy_for_me_detail.create({
+                order_sid: order.order_sid,
+                order_food: item.order_food,
+                order_quantity: item.order_quantity,
+                order_price: item.order_price
+            }, { transaction });
+        }
+
+        if (payment_type === 'wallet') {
+            // update wallet
+            await Member.member_info.update({
+                wallet: member.wallet - total_price
+            }, {
+                where: {
+                    sid: userId
+                }
+            }, { transaction });
+        }
+
+        // Commit the transaction
+        await transaction.commit();
+
+        res.status(200).send({
+            message: "Order created successful!",
+            order_sid: order.order_sid
+        });
+    } catch (error) {
+        // Rollback the transaction
+        await transaction.rollback();
+
+        res.status(400).send({
+            error: error.message
+        });
+    }
+}

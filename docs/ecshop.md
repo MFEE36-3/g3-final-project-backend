@@ -63,7 +63,7 @@ Retrieves a list of items based on provided query parameters.
 
 ### Checkout APIs
 
-#### POST　/ecshop/checkout
+#### POST　/ecshop/checkout (NEED JWT)
 Creates an order and returns the order ID.
 Body Payload:
 1. items: Array of item_id and amount
@@ -131,6 +131,80 @@ Response:
 
 Note:
     * Need to set LINEPAY_RETURN_HOST in .env file for frone-end redirection.
+
+## Topup
+
+### POST /ecshop/checkout/easytopup (NEED JWT)
+
+Directly topup to user wallet without any order created.
+
+Body Payload:
+1. amount: topup amount
+
+Response:
+```javascript
+{
+    success: true,
+    message: "儲值成功"
+}
+```
+
+### POST /ecshop/checkout/linepaytopup (NEED JWT)
+
+Create linepay order for topup, but no validation for order, wallet would be topup before user pay in linepay.
+
+Body Payload:
+1. amount: topup amount
+
+Response:
+```javascript
+{
+    message: "Order created successful!",
+    linepay_redirect: "redirect_url"
+}
+```
+
+## Buy For me
+
+### POST /ecshop/checkout/buyforme (NEED JWT)
+
+Create order for buy for me, and return order_id, just support 'wallet' payment type.
+
+Body Payload:
+```javascript
+{
+    "open_sid": 1,
+    "nickname": "test",
+    "mobile_number": "0912-345-678",
+    "order_amount": 160, // Should be total amount of items (exclude shipfee & coupon)
+    "order_instructions": "",
+    "items": [
+        {
+            "order_food": 18,
+            "order_quantity": 1,
+            "order_price": 60
+        },
+        {
+            "order_food": 148,
+            "order_quantity": 2,
+            "order_price": 100
+        }
+    ],
+    "payment_info": {
+        "payment_type": "wallet",
+        "shipfee": 600, // If this member is VIP, shipfee would be 0
+        "coupon_sid": 55
+    }
+}
+```
+
+Response:
+```javascript
+{
+    "message": "Order created successful!",
+    "order_sid": 806
+}
+```
 
 ### Other Refs
 

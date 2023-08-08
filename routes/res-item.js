@@ -15,7 +15,6 @@ const transporter = require(__dirname + '/../modules/config.js').transporter
 // 將html與api分開
 
 const getListData = async (req, shop_id) => {
-
     let output = {
         redirect: "",
         totalRows: 0,
@@ -64,7 +63,6 @@ const getListData = async (req, shop_id) => {
     }
     // where += ` AND \`name\` LIKE ${ db.escape('%'+keyword+'%') } `;
     // 未跳脫前:where += ` AND \`name\` LIKE '%${keyword}%' `
-
     // 先看資料庫共有幾筆資料
     const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
     const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
@@ -1015,6 +1013,86 @@ router.post('/getTogoOrder', async (req, res) => {
     }
     const shop_id = req.body.id
     console.log(shop_id)
+
+    const getListData = async (req, shop_id) => {
+        let output = {
+            redirect: "",
+            totalRows: 0,
+            perPage: 10,
+            totalPages: 0,
+            page: 1,
+            rows: [],
+        }
+    
+        const perPage = 10;
+    
+        // 在哪一個分頁(?page=...) => 用req.query
+        let page = req.query.page ? +req.query.page : 1;
+        console.log('---page---')
+        console.log(page)
+        console.log('---page---')
+    
+        console.log('---shop_id---')
+        console.log(req.query.shop_id)
+        console.log('---shop_id---')
+    
+        // 做搜尋功能:用queryString做
+        let keyword = req.query.keyword || '';
+        console.log('---keyword---')
+        console.log(keyword)
+        console.log('---keyword---')
+        // 防範如果page是NaN或0會回傳true
+        const baseUrl = req.baseUrl
+        if (!page || page < 1) {               
+            // 小於1或NaN、0時就導回到/ab
+            output.redirect = req.baseUrl
+            return output   // 不能用'/',會回到整個網站的根目錄，要用baseUrl
+        }
+    
+        // 以sql語法做關鍵字搜尋，先做出篩選條件
+        // let where = `WHERE 1`;
+        let where = `WHERE shop_id=${shop_id}`;
+        if (keyword) {
+            const kw_escaped = db.escape('%' + keyword + '%');
+            where += ` AND ( 
+              \`food_title\` LIKE ${kw_escaped} 
+              OR
+              \`food_des\` LIKE ${kw_escaped}
+              )
+            `;
+        }
+        // where += ` AND \`name\` LIKE ${ db.escape('%'+keyword+'%') } `;
+        // 未跳脫前:where += ` AND \`name\` LIKE '%${keyword}%' `
+        // 先看資料庫共有幾筆資料
+        const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
+        const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
+    
+        console.log('---totalRows---')
+        console.log(totalRows)
+        console.log('---totalRows---')
+    
+        let totalPages = 0;
+        // 計算有多少頁(假設總筆數totalRows不為0)
+        if (totalRows) {
+            totalPages = Math.ceil(totalRows / perPage)
+    
+            if (page > totalPages) {
+                output.redirect = req.baseUrl + '?page=' + totalPages
+                return output
+            }
+        }
+        console.log('---totalPages---')
+        console.log(totalPages)
+        console.log('---totalPages---')
+        let rows = [];
+        // 拿分頁的資料
+        const sql = `SELECT * FROM food_items ${where} ORDER BY food_id DESC LIMIT ${perPage * (page - 1)}, ${perPage}`;
+        [rows] = await db.query(sql)
+        // const [rows] = await db.query(sql) 也可以
+    
+        output = { ...output, totalRows, perPage, totalPages, page, baseUrl, keyword, rows }
+        return output
+    }
 
     const sql = "SELECT `order`.`sid`,`status`,`shop_id`,`amount`,`memo`,`order`.`create_at`,`food_id`,`order_item`,`order_num`,`price` FROM `order` JOIN `order_detail` ON `order`.`sid` = `order_detail`.`order_id` WHERE  `order`.`shop_id`=?"
 

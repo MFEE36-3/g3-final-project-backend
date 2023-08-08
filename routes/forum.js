@@ -4,8 +4,8 @@ const dayjs = require("dayjs");
 const router = express.Router();
 const upload = require(__dirname + "/../modules/img-upload");
 const multipartParser = upload.none();
-const forumUploadImg =require(__dirname + '/../modules/forumupload');
-const multer = require('multer');
+const forumUploadImg = require(__dirname + "/../modules/forumupload");
+const multer = require("multer");
 
 // 取得所有留言及論壇資料的路由
 router.get("/", async (req, res) => {
@@ -54,14 +54,14 @@ router.get("/", async (req, res) => {
 });
 
 // 新增文章的api
-router.post("/add", forumUploadImg.single('preImg'), async (req, res) => {
+router.post("/add", forumUploadImg.single("preImg"), async (req, res) => {
   let output = {
     success: true,
   };
-  console.log(req.file)
-  let photo = '';
-  if(req.file && req.file.filename){
-    photo = req.file.filename
+  console.log(req.file);
+  let photo = "";
+  if (req.file && req.file.filename) {
+    photo = req.file.filename;
   }
   const { header, content, user_id } = req.body;
   // 將文章資料插入到資料庫中
@@ -147,6 +147,15 @@ WHERE f.forum_sid = ${forum_sid}`;
   return res.json(output);
 });
 
+// 在forum一載入就抓會員有哪些讚
+router.post('/get-member-like', async(req,res)=>{
+  // res.json(req.body)
+  const sql = "SELECT * FROM `forum_like` WHERE user_id=?;"
+  const [row] = await db.query(sql,[req.body.sid])
+
+  res.json(row)
+})
+
 router.get("/message", async (req, res) => {
   console.log(req.query.forum_keyword);
 
@@ -204,24 +213,191 @@ LIMIT ${offset}, ${limit}
   res.json(article);
   console.log(article);
 });
+
+// 在留言拿到使用者頭像
+router.post('/getUserPhoto', async(req,res)=>{
+  res.json(req.body)
+})
+
 // 新增留言的api
-router.post("/addmessage", multipartParser, async (req, res) => {
+router.post("/addmessage", async (req, res) => {
+
+  // res.json(req.body)
+
   let output = {
     success: true,
+    error:'',
+    data:null
   };
 
-  const { user_id, comment_content } = req.body;
-  // 將留言資料插入到資料庫中
-  const sql = `
-    INSERT INTO message ( user_id ,comment_content , publishedTime)
-    VALUES (?,?,NOW())`;
+  const { member_id, content,forum_sid } = req.body;
+
+  // // 將留言資料插入到資料庫中
+  const sql = "INSERT INTO"+
+  " `message`(`publishedTime`, `user_id`, `forum_sid`, `comment_content`)"+
+  " VALUES (NOW(),?,?,?)";
+
+  const [result] = await db.query(sql,[member_id,forum_sid,content])
+  output.data = result
+  res.json(output)
+});
+//處理蒐藏愛心的API
+router.post("/handle-like-list", async (req, res) => {
+
+  // res.json(req.body)
+  const clickHeart = req.body.clickHeart
+  const body = req.body
+  // clickHeart == true:要新增收藏
+  if (clickHeart) {
+    const checkSQL = "SELECT * FROM `forum_like` WHERE user_id=? AND forum_sid=?"
+    const [row] = await db.query(checkSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    if (row.length) {
+      // 資料庫已經有這個按讚的資料了，直接return空值
+      return res.json(req.body)
+    } else {
+      // 資料庫沒有這筆資料:新增進去
+      const insertSQL = "INSERT INTO `forum_like`(`user_id`, `forum_sid`) VALUES (?,?)"
+      const [result] = await db.query(insertSQL, [
+        req.body.member_id,
+        req.body.article_sid
+      ])
+      console.log('insert : ' + result)
+    }
+  } else {
+    // clickHeart == false:要移除收藏
+    const deleteSQL = "DELETE FROM `forum_like` WHERE user_id=? AND forum_sid=?;"
+    const [row] = await db.query(deleteSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    console.log('delete row : ' + row)
+  }
+
+  res.json(req.body)
+});
+
+//處理蒐藏收藏的api
+router.post("/handle-collect-list", async(req,res) => {
+
+  const clickCollect = req.body.clickCollect
+  const body = req.body
+  // clickHeart == true:要新增收藏
+  if (clickCollect) {
+    const checkSQL = "SELECT `member_sid`, `forum_sid`, `date` FROM `forum_favorite` WHERE `member_sid` = ? AND `forum_sid` = ?;"
+    const [row] = await db.query(checkSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    if (row.length) {
+      // 資料庫已經有這個按讚的資料了，直接return空值
+      return res.json(req.body)
+    } else {
+      // 資料庫沒有這筆資料:新增進去
+      const insertSQL = "INSERT INTO `forum_favorite`(`member_sid`, `forum_sid`, `date`) VALUES (?,?,NOW())"
+      const [result] = await db.query(insertSQL, [
+        req.body.member_id,
+        req.body.article_sid
+      ])
+      console.log('insert : ' + result)
+    }
+  } else {
+    // clickHeart == false:要移除收藏
+    const deleteSQL = "DELETE FROM `forum_favorite` WHERE member_sid=? AND forum_sid=?;"
+    const [row] = await db.query(deleteSQL, [
+      req.body.member_id,
+      req.body.article_sid
+    ])
+    console.log('delete row : ' + row)
+  }
+
+  res.json(req.body)
+})
+
+//讀取收藏清單API
+router.get("/show-like", async (req, res) => {
+  let output = {
+    success: true,
+    likeDatas: [],
+  };
+
+  let member = "";
+  if (res.locals.jwtData) {
+    member = res.locals.jwtData.id;
+  }
+
+  let likeDatas = [];
+  if (member) {
+    const sql_likeList = `SELECT
+    r.rest_sid,
+    r.name,
+    r.city,
+    r.area,
+    (SELECT ru.rule_name FROM restaurant_associated_rule AS ar_sub
+    JOIN restaurant_rule AS ru ON ar_sub.rule_sid = ru.rule_sid
+    WHERE ar_sub.rest_sid = r.rest_sid
+    LIMIT 1) AS rule_name,
+    GROUP_CONCAT(DISTINCT s.service_name) AS service_names,
+    (SELECT img_name FROM restaurant_img WHERE rest_sid = r.rest_sid LIMIT 1) AS img_name,
+    MAX(rl.date) AS date
+    FROM
+    restaurant_information AS r
+    JOIN restaurant_associated_rule AS ar ON r.rest_sid = ar.rest_sid
+    JOIN restaurant_associated_service AS asr ON r.rest_sid = asr.rest_sid
+    JOIN restaurant_service AS s ON asr.service_sid = s.service_sid
+    JOIN restaurant_img AS ri ON r.rest_sid = ri.rest_sid
+    JOIN restaurant_like AS rl ON r.rest_sid = rl.rest_sid
+    WHERE rl.member_sid = '${member}'
+GROUP BY
+r.rest_sid,
+r.name,
+r.city,
+r.area
+ORDER BY
+date DESC`;
+
+    [likeDatas] = await db.query(sql_likeList);
+    likeDatas.forEach((v) => {
+      v.date = res.toDateString(v.date);
+    });
+  }
+  console.log(likeDatas);
+  output = {
+    ...output,
+    likeDatas,
+  };
+  return res.json(output);
+});
+//刪除收藏清單的APIjwtData
+
+router.delete("/likelist/:rid", async (req, res) => {
+  let output = {
+    success: true,
+    likeDatas: [],
+  };
+
+  let member = "";
+  if (res.locals.jwtData) {
+    member = res.locals.jwtData.id;
+  }
+  const { rid } = req.params;
+  let sql_deleteLikeList = "DELETE FROM `restaurant_like` WHERE ";
+
+  if (rid === "all") {
+    sql_deleteLikeList += `member_sid = '${member}'`;
+  } else {
+    sql_deleteLikeList += `member_sid = '${member}' AND rest_sid='${rid}'`;
+  }
+
   try {
-    await db.query(sql, [user_id, comment_content]);
-    return res.json(output);
+    const [result] = await db.query(sql_deleteLikeList);
+    res.json({ ...result });
   } catch (error) {
-    console.error(error);
-    output.success = false;
-    return res.json(output);
+    console.log(error);
+    res.status(500).json({ error: "An error occurred" });
   }
 });
+
 module.exports = router;

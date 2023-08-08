@@ -53,6 +53,34 @@ router.post("/login", async (req, res) => {
     res.json(output);
 });
 
+// google登入的API
+router.post("/googlelogin", async (req, res) => {
+    const sql1 = `SELECT * FROM member_info WHERE google_uid = ? `;
+    const [rows1] = await db.query(sql1, [req.body.uid]);
+
+    if (rows1[0]) {
+        res.json(rows1);
+    } else {
+        const sql2 = `INSERT INTO member_info(
+            account,
+            nickname,
+            google_uid,
+            photo_url,
+            creat_at
+            ) VALUES (
+                ?,?,?,?,NOW())`;
+        await db.query(sql2, [
+            req.body.email,
+            req.body.displayName,
+            req.body.uid,
+            req.body.photoURL,
+        ]);
+        const sql3 = `SELECT * FROM member_info WHERE google_uid = ? `;
+        const [rows2] = await db.query(sql3, [req.body.uid]);
+        res.json(rows2);
+    }
+});
+
 // 拿到會員基本資料的API
 router.get("/", async (req, res) => {
     const output = {

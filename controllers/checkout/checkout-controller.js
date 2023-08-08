@@ -186,6 +186,13 @@ exports.simpleCheckout = async (req, res) => {
                         sid: userId
                     }
                 }, { transaction });
+                await Member.member_wallet_record.create({
+                    member_id: userId,
+                    amount: -(total_price + discount + shipfee),
+                    content: `購買 ${basket[0].name} 等商品`,
+                }, {
+                    transaction
+                });
                 break;
             default:
                 break;
@@ -306,6 +313,7 @@ exports.buyForMeCheckout = async (req, res) => {
                     sid: userId
                 }
             }, { transaction });
+
         }
 
         // Commit the transaction

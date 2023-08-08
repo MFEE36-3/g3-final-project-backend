@@ -164,6 +164,21 @@ Response:
 }
 ```
 
+### POST /ecshop/checkout/premium (NEED JWT)
+
+Upgrade to premium member, just support 'wallet' payment type.
+
+Body Payload:
+1. sid: level sid
+
+Response:
+```javascript
+{
+    "success": true,
+    "error": "升級成功"
+}
+```
+
 ## Buy For me
 
 ### POST /ecshop/checkout/buyforme (NEED JWT)

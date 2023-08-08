@@ -21,5 +21,6 @@ router.post('/', checkoutController.simpleCheckout);
 router.post('/buyforme', checkoutController.buyForMeCheckout);
 router.post('/easytopup', topupController.easy_topup);
 router.post('/linepaytopup', topupController.linepay_topup);
+router.post('/premium', topupController.premiumUpgrade);
 
 module.exports = router;

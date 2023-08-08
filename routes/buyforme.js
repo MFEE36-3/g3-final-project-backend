@@ -138,7 +138,7 @@ router.post('/openforyou_followers', async (req, res) => {
     const sql = `SELECT open_for_you.open_sid,open_for_you.meet_time,open_for_you.meet_place,open_for_you.target_store,open_for_you.tip,shops.shop FROM open_for_you 
     JOIN shops ON open_for_you.target_store = shops.sid
     WHERE open_member_id = ${member_id} 
-    ORDER BY open_for_you.open_sid DESC`;
+    ORDER BY open_for_you.meet_time DESC`;
     [arr1] = await db.query(sql);
 
     //拿到跟單數量 單號 暱稱 總額  (排除訂單總額只有跑腿費的訂單)

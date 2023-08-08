@@ -155,6 +155,13 @@ router.post('/get-member-like', async(req,res)=>{
 
   res.json(row)
 })
+router.post('/get-member-collect', async(req,res)=>{
+  // res.json(req.body)
+  const sql = "SELECT * FROM `forum_favorite` WHERE member_sid=?;"
+  const [row] = await db.query(sql,[req.body.sid])
+
+  res.json(row)
+})
 
 router.get("/message", async (req, res) => {
   console.log(req.query.forum_keyword);

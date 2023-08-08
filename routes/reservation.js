@@ -119,7 +119,7 @@ router.get('/restaurant', async (req, res) => {
                 return v = ` OR a.areaname = '${v}' `;
             }
         });
-        console.log(arrresult)
+        // console.log(arrresult)
         distWhere = 'AND ( ' + arrresult.join('') + ')';
     }
 
@@ -230,7 +230,7 @@ router.get("/:sid", async (req, res) => {
 
         //取得訂單資訊
         const bookingsql = `SELECT b.*,st.seat_number FROM booking b 
-        JOIN shops s ON b.shop_id =  s.sid
+        JOIN shops s ON b.shop_id = s.sid
         JOIN seat_type st ON b.table = st.seat_id
         WHERE b.shop_id=${sid}`;
 
@@ -238,7 +238,7 @@ router.get("/:sid", async (req, res) => {
         const seattypesql = `SELECT * FROM seat_type`;
 
         //取得餐點資訊
-        const foodsql = `SELECT * FROM food_items AS fi JOIN food_cate AS fc ON fi.food_cate = fc.food_sid WHERE fi.shop_id=${sid}`
+        const foodsql = `SELECT * FROM food_items AS fi JOIN res_food_cate AS fc ON fi.food_cate = fc.food_cate WHERE fi.shop_id=${sid}`
 
         const [detail] = await db.query(detailsql);
         const [booking] = await db.query(bookingsql);
@@ -256,11 +256,11 @@ router.get("/:sid", async (req, res) => {
 
         if (booking.length) {
             output.success = true;
-            booking.map(v => {
+            output.booking = booking.map(v => {
                 v.booking_date = moment(v.booking_date).format('YYYY-MM-DD')
                 return v;
             })
-            // console.log(rows)
+
         } else {
             // 沒有資料
             output.error = "沒有資料 !";
@@ -286,7 +286,9 @@ router.get("/:sid", async (req, res) => {
             output.error = "沒有資料 !";
         }
     }
-    console.log(output)
+    // console.log(output)
+    console.log(output.booking)
+    console.log(output.success)
     res.json(output);
 
 });
@@ -316,10 +318,50 @@ router.post("/", async (req, res) => {
     });
 })
 
-//取得餐點資料
-router.get("/togo", async (req, res) => {
+//新增收藏餐廳
+router.post("/favorite", async (req, res) => {
+    const { id, shop_id } = req.body;
+    const sql = "INSERT INTO `favorite`(`Id`,`shop_id`,`create_at`) VALUES (?,?,NOW())";
+    try {
+        const [result] = await db.query(sql, [id, shop_id])
+        res.json({
+            result,
+            postData: req.body
+        });
+    } catch (error) {
+        console.log(error)
+        res.json(error)
+    }
+
 
 })
+
+//查詢收藏餐廳
+router.get("/favoritelist/:id", async (req, res) => {
+    const output = {
+        rows: []
+    }
+    const id = req.params.id;
+    const sql = `SELECT * FROM favorite WHERE id=${id}`
+    const [rows] = await db.query(sql);
+    output.rows = rows;
+
+    return res.json(output);
+
+})
+
+//刪除收藏餐廳
+router.delete("/favorite_delete/:sid/:shop_id", async (req, res) => {
+    const { id, shop_id } = req.body;
+    const sql = `DELETE FROM favorite WHERE id=${id} AND shop_id=${shop_id} `;
+    const [result] = await db.query(sql, [id, shop_id])
+
+    res.json({
+        result,
+        postData: req.body
+    });
+})
+
 
 
 

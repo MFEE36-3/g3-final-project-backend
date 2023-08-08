@@ -280,7 +280,7 @@ router.post('/setbuyforme', async (req, res) => {
 
     // TODO: 檢查資料格式
 
-    const { order_sid, nickname, } = req.body;
+    const { open_sid, nickname, order_member_id, mobile_number, order_amount, order_instructions, order_status, order_detail } = req.body;
 
     if (order_member_id === 0) return res.json('請先登入');
 
@@ -302,6 +302,9 @@ router.post('/setbuyforme', async (req, res) => {
     (order_sid,order_food,order_quantity,order_price)
     VALUES(?,?,?,?)`;
 
+
+    // 獲取最新的insert值
+    const order_sid = result[0].insertId;
 
     const result2 = await Promise.all(
 

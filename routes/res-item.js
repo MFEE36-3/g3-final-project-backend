@@ -19,23 +19,33 @@ const getListData = async (req, shop_id) => {
     let output = {
         redirect: "",
         totalRows: 0,
-        perPage: 25,
+        perPage: 5,
         totalPages: 0,
         page: 1,
         rows: [],
     }
 
-    const perPage = 50;
+    const perPage = 5;
 
     // 在哪一個分頁(?page=...) => 用req.query
     let page = req.query.page ? +req.query.page : 1;
+    console.log('---page---')
+    console.log(page)
+    console.log('---page---')
+
+    console.log('---shop_id---')
+    console.log(req.query.shop_id)
+    console.log('---shop_id---')
 
     // 做搜尋功能:用queryString做
     let keyword = req.query.keyword || '';
-
+    console.log('---keyword---')
+    console.log(keyword)
+    console.log('---keyword---')
     // 防範如果page是NaN或0會回傳true
     const baseUrl = req.baseUrl
-    if (!page || page < 1) {               // 小於1或NaN、0時就導回到/ab
+    if (!page || page < 1) {               
+        // 小於1或NaN、0時就導回到/ab
         output.redirect = req.baseUrl
         return output   // 不能用'/',會回到整個網站的根目錄，要用baseUrl
     }
@@ -59,6 +69,10 @@ const getListData = async (req, shop_id) => {
     const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
     const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
 
+    console.log('---totalRows---')
+    console.log(totalRows)
+    console.log('---totalRows---')
+
     let totalPages = 0;
     // 計算有多少頁(假設總筆數totalRows不為0)
     if (totalRows) {
@@ -69,7 +83,89 @@ const getListData = async (req, shop_id) => {
             return output
         }
     }
+    console.log('---totalPages---')
+    console.log(totalPages)
+    console.log('---totalPages---')
+    let rows = [];
+    // 拿分頁的資料
+    const sql = `SELECT * FROM food_items ${where} ORDER BY food_id DESC LIMIT ${perPage * (page - 1)}, ${perPage}`;
+    [rows] = await db.query(sql)
+    // const [rows] = await db.query(sql) 也可以
 
+    output = { ...output, totalRows, perPage, totalPages, page, baseUrl, keyword, rows }
+    return output
+}
+
+const getAllListData = async (req, shop_id) => {
+
+    let output = {
+        redirect: "",
+        totalRows: 0,
+        perPage: 5,
+        totalPages: 0,
+        page: 1,
+        rows: [],
+    }
+
+    const perPage = 100;
+
+    // 在哪一個分頁(?page=...) => 用req.query
+    let page = req.query.page ? +req.query.page : 1;
+    console.log('---page---')
+    console.log(page)
+    console.log('---page---')
+
+    console.log('---shop_id---')
+    console.log(req.query.shop_id)
+    console.log('---shop_id---')
+
+    // 做搜尋功能:用queryString做
+    let keyword = req.query.keyword || '';
+    console.log('---keyword---')
+    console.log(keyword)
+    console.log('---keyword---')
+    // 防範如果page是NaN或0會回傳true
+    const baseUrl = req.baseUrl
+    if (!page || page < 1) {               
+        // 小於1或NaN、0時就導回到/ab
+        output.redirect = req.baseUrl
+        return output   // 不能用'/',會回到整個網站的根目錄，要用baseUrl
+    }
+
+    // 以sql語法做關鍵字搜尋，先做出篩選條件
+    // let where = `WHERE 1`;
+    let where = `WHERE shop_id=${shop_id}`;
+    if (keyword) {
+        const kw_escaped = db.escape('%' + keyword + '%');
+        where += ` AND ( 
+          \`food_title\` LIKE ${kw_escaped} 
+          OR
+          \`food_des\` LIKE ${kw_escaped}
+          )
+        `;
+    }
+
+    // 先看資料庫共有幾筆資料
+    const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
+    const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
+
+    console.log('---totalRows---')
+    console.log(totalRows)
+    console.log('---totalRows---')
+
+    let totalPages = 0;
+    // 計算有多少頁(假設總筆數totalRows不為0)
+    if (totalRows) {
+        totalPages = Math.ceil(totalRows / perPage)
+
+        if (page > totalPages) {
+            output.redirect = req.baseUrl + '?page=' + totalPages
+            return output
+        }
+    }
+    console.log('---totalPages---')
+    console.log(totalPages)
+    console.log('---totalPages---')
     let rows = [];
     // 拿分頁的資料
     const sql = `SELECT * FROM food_items ${where} ORDER BY food_id DESC LIMIT ${perPage * (page - 1)}, ${perPage}`;
@@ -192,14 +288,14 @@ router.get('/send', (req, res) => {
 })
 
 // 商家註冊發送驗證信
-router.post('/sendVerifyCode', async(req, res) => {
+router.post('/sendVerifyCode', async (req, res) => {
     const output = {
-        success:false,
-        error:'',
-        data:'',
-        matchCode:'',
+        success: false,
+        error: '',
+        data: '',
+        matchCode: '',
     }
-    if(!req.body.account){
+    if (!req.body.account) {
         output.error = '你沒有填入帳號!'
         return res.json(output)
     }
@@ -226,7 +322,7 @@ router.post('/sendVerifyCode', async(req, res) => {
 
     // 寫入後端資料庫
     const sql = "INSERT INTO `otp`(`matchCode`, `otp_code`, `created_at`) VALUES (?,?,NOW())"
-    const [result] = await db.query(sql,[matchCode,verifyCode]) 
+    const [result] = await db.query(sql, [matchCode, verifyCode])
     console.log(result)
     output.data = result
     output.success = true
@@ -237,25 +333,25 @@ router.post('/sendVerifyCode', async(req, res) => {
 })
 
 // 商家註冊跟資料庫對比六位數密碼
-router.post('/checkVerifyCode', async(req,res)=>{
+router.post('/checkVerifyCode', async (req, res) => {
     const output = {
-        success:false,
-        message:'',
-        error:'',
-        data:null,
+        success: false,
+        message: '',
+        error: '',
+        data: null,
     }
 
     const matchCode = req.body.matchCode
     const sixDigitCode = req.body.sixDigitCode
 
-    if(sixDigitCode.length = ""){
+    if (sixDigitCode.length = "") {
         output.error = '沒有填入驗證碼!'
         res.json(output)
     }
-    
+
     // 先對照有沒有matchCode的資料
     const matchSQL = "SELECT * FROM `otp` WHERE matchCode=?"
-    const [result] = await db.query(matchSQL,[matchCode])
+    const [result] = await db.query(matchSQL, [matchCode])
     console.log(result)
     // [
     //     {
@@ -267,15 +363,15 @@ router.post('/checkVerifyCode', async(req,res)=>{
     //   ]
 
     // 拿到資料後去對比sixDigitCode
-    if(sixDigitCode == result[0].otp_code){
+    if (sixDigitCode == result[0].otp_code) {
         output.message = '驗證碼正確!';
         output.success = true;
         return res.json(output)
-    }else{
+    } else {
         output.message = '驗證碼不正確!';
         return res.json(output)
     }
-    
+
     res.json(req.body)
 })
 
@@ -413,28 +509,28 @@ router.post('/res-register-form/', resMultipartParser, async (req, res) => {
     }
 
     const salt = bcrypt.genSaltSync(10)
-    const hashPassword =await bcrypt.hash(req.body.password, salt)
+    const hashPassword = await bcrypt.hash(req.body.password, salt)
 
-        // 判斷營業日期
-        const openTimeArray = [0,0,0,0,0,0,0,]
-        const openDays = req.body.open_days // array
-        for (let openday of openDays){
-            if (openday == '星期一'){
-                openTimeArray[0] = 1
-            }else if(openday == '星期二'){
-                openTimeArray[1] = 1
-            }else if(openday == '星期三'){
-                openTimeArray[2] = 1
-            }else if(openday == '星期四'){
-                openTimeArray[3] = 1
-            }else if(openday == '星期五'){
-                openTimeArray[4] = 1
-            }else if(openday == '星期六'){
-                openTimeArray[5] = 1
-            }else if(openday == '星期日'){
-                openTimeArray[6] = 1
-            }
+    // 判斷營業日期
+    const openTimeArray = [0, 0, 0, 0, 0, 0, 0,]
+    const openDays = req.body.open_days // array
+    for (let openday of openDays) {
+        if (openday == '星期一') {
+            openTimeArray[0] = 1
+        } else if (openday == '星期二') {
+            openTimeArray[1] = 1
+        } else if (openday == '星期三') {
+            openTimeArray[2] = 1
+        } else if (openday == '星期四') {
+            openTimeArray[3] = 1
+        } else if (openday == '星期五') {
+            openTimeArray[4] = 1
+        } else if (openday == '星期六') {
+            openTimeArray[5] = 1
+        } else if (openday == '星期日') {
+            openTimeArray[6] = 1
         }
+    }
 
     const sql_shop =
         "INSERT INTO `shops`" +
@@ -518,9 +614,9 @@ router.post('/res-register-form/', resMultipartParser, async (req, res) => {
 router.post('/add-item', foodItemMultipartParser, async (req, res) => {
 
     let foodCate = 0
-    if (req.body.foodCate === '前菜') {
+    if (req.body.foodCate === '開胃菜') {
         foodCate = 1
-    } else if (req.body.foodCate === '主菜') {
+    } else if (req.body.foodCate === '主餐') {
         foodCate = 2
     } else if (req.body.foodCate === '甜點') {
         foodCate = 3
@@ -549,21 +645,95 @@ router.post('/add-item', foodItemMultipartParser, async (req, res) => {
 })
 
 // 取得品項資料
-router.post('/item-management/', async (req, res) => {
+router.post('/item-management', async (req, res) => {
     // res.json(req.body)
 
     const output = await getListData(req, req.body.id);
     if (output.redirect) {
         return res.redirect(output.redirect)
     }
+    console.log(output)
+    console.log('-------req.query--------')
+    console.log(req.query)
+    console.log('-------req.query--------')
 
     output.rows.forEach(i => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
+        if (i.food_cate == 1) {
+            i.food_cate = '開胃菜'
+        } else if (i.food_cate == 2) {
+            i.food_cate = '主餐'
+        } else if (i.food_cate == 3) {
+            i.food_cate = '甜點'
+        } else if (i.food_cate == 4) {
+            i.food_cate = '飲料'
+        } else if (i.food_cate == 5) {
+            i.food_cate = '湯品'
+        }
     })
 
-    console.log(output)
     res.json(output)
 })
+
+router.get('/item-management', async (req, res) => {
+    // res.json(req.body)
+
+    const output = await getListData(req, req.query.shop_id);
+    // if (output.redirect) {
+    //     return res.redirect(output.redirect)
+    // }
+
+    console.log('---output---')
+    console.log(output)
+    console.log('---output---')
+
+    console.log('-------req.query--------')
+    console.log(req.query)
+    console.log('-------req.query--------')
+
+    output.rows.forEach(i => {
+        i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
+        if (i.food_cate == 1) {
+            i.food_cate = '開胃菜'
+        } else if (i.food_cate == 2) {
+            i.food_cate = '主餐'
+        } else if (i.food_cate == 3) {
+            i.food_cate = '甜點'
+        } else if (i.food_cate == 4) {
+            i.food_cate = '飲料'
+        } else if (i.food_cate == 5) {
+            i.food_cate = '湯品'
+        }
+    })
+
+    // console.log(output)
+    console.log('router.get')
+    res.json(output)
+})
+
+router.post('/get-all-item-management', async(req,res) => {
+    const sql = "SELECT * FROM `food_items` WHERE `shop_id`=?;"
+    const output = await getAllListData(req,req.body.id)
+    output.rows.forEach(i => {
+        i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
+        if (i.food_cate == 1) {
+            i.food_cate = '開胃菜'
+        } else if (i.food_cate == 2) {
+            i.food_cate = '主餐'
+        } else if (i.food_cate == 3) {
+            i.food_cate = '甜點'
+        } else if (i.food_cate == 4) {
+            i.food_cate = '飲料'
+        } else if (i.food_cate == 5) {
+            i.food_cate = '湯品'
+        }
+    })
+    res.json(output)
+    // res.json(req.body)
+})
+
+// console.log(output)
+// res.json(output)
 
 // 商品排序:由新到舊
 router.post('/item-management/DESC', async (req, res) => {
@@ -596,7 +766,7 @@ router.post('/item-management/ASC', async (req, res) => {
 })
 
 // 商品編輯:搜尋商品
-router.post('/item-search', async(req,res)=>{
+router.post('/item-search', async (req, res) => {
     res.json(req.body)
     const keyword = req.body.keyword;
 })
@@ -611,17 +781,34 @@ router.get('/item-management/editItem/:food_id', async (req, res) => {
         data: null
     }
 
-    console.log(req.params) // { food_id: '100' }
+    // console.log(req.params) // { food_id: '100' }
     const food_id = parseInt(req.params.food_id) || 0
-    console.log(food_id)    // 100
+    // console.log(food_id)    // 100
 
     const sql = `SELECT * FROM food_items WHERE food_id=?`
     const [result] = await db.query(sql, [food_id])
+
+    console.log('------result-------')
+    console.log(result)
+
 
     if (!result.length) {
         output.error = '沒有該筆資料'
         res.json(output)
     } else {
+        let food_cate = ''
+        if (result[0].food_cate == 1) {
+            food_cate = '開胃菜'
+        } else if (result[0].food_cate == 2) {
+            food_cate = '主餐'
+        } else if (result[0].food_cate == 3) {
+            food_cate = '甜點'
+        } else if (result[0].food_cate == 4) {
+            food_cate = '飲料'
+        } else if (result[0].food_cate == 5) {
+            food_cate = '湯品'
+        }
+        result[0].food_cate = food_cate
         output.data = result;
         output.success = true;
         res.json(output)
@@ -643,6 +830,78 @@ router.delete('/item-management/deleteItem/:food_id', async (req, res) => {
 
     res.json(result)
 })
+
+// 餐廳商品關鍵字搜尋(get)和換頁功能
+// router.get('/:Keyword', async (req, res) => {
+//     // console.log(req.params)                 // { Keyword: 'item-management' }
+//     // console.log(req.query)                  // { keyword: 'qwerty', shop_id: '1' }
+//     const keyword = req.query.keyword || '' // string
+//     const shop_id = req.query.shop_id || 0
+//     const output = await getListData(req, shop_id, keyword)
+//     output.rows.forEach(i => {
+//         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
+//     })
+
+//     let page = req.query.page ? parseInt(req.query.page) : 1;
+//     if (!page || page < 1) {
+//       output.redirect = req.baseUrl;
+//       return res.json(output);
+//     }
+
+//     let where = " WHERE 1 ";
+//     if (keyword) {
+//       const kw_escaped = db.escape("%" + keyword + "%");
+//       where += ` AND (
+//             \`food_title\` LIKE ${kw_escaped} 
+//             OR
+//             \`food_des\` LIKE ${kw_escaped}
+//             )
+//           `;
+//     }
+
+//     const perPage = 10
+//     const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`;
+//     const [[{ totalRows }]] = await db.query(t_sql);
+//     let totalPages = 0;
+//     let rows = [];
+//     if (totalRows) {
+//       totalPages = Math.ceil(totalRows / perPage);
+//       if (page > totalPages) {
+//         output.redirect = req.baseUrl + "?page=" + totalPages;
+//         return res.json(output);
+//       }
+//       const sql = ` SELECT * FROM products ${where} LIMIT ${
+//         perPage * (page - 1)
+//       }, ${perPage}`;
+//       [rows] = await db.query(sql);
+//     }
+
+//     console.log(output)
+//     // {
+//     //     redirect: '',
+//     //     totalRows: 5,
+//     //     perPage: 50,
+//     //     totalPages: 1,
+//     //     page: 1,
+//     //     rows: [
+//     //       {
+//     //         food_id: 139,
+//     //         shop_id: 1,
+//     //         food_img: 'default_image.jpg',
+//     //         food_cate: 2,
+//     //         food_title: '魯肉飯',
+//     //         food_des: '經典台灣小吃，滷肉飯搭配滷肉、醬油蛋、酸菜等配料。',
+//     //         food_price: 50,
+//     //         food_note: null,
+//     //         create_time: null
+//     //       },
+//     //     ],
+//     //     baseUrl: '/res',
+//     //     keyword: '滷肉'
+//     //   }
+//     res.json(output)                     // { keyword: 'qwerty' }
+
+// })
 
 // 商家取得訂單資料
 router.post('/getShopOrder', async (req, res) => {
@@ -746,7 +1005,163 @@ router.post('/getShopOrder', async (req, res) => {
     res.json(output)
 })
 
-// login東西在這
+// 商家取得訂單資料:外帶
+router.post('/getTogoOrder', async (req, res) => {
+    const output = {
+        order: null,
+        order_item: null,
+        order_amount: null,
+        groupedOrderItems: [] // 新增一個空陣列
+    }
+    const shop_id = req.body.id
+    console.log(shop_id)
+
+    const sql = "SELECT `order`.`sid`,`status`,`shop_id`,`amount`,`memo`,`order`.`create_at`,`food_id`,`order_item`,`order_num`,`price` FROM `order` JOIN `order_detail` ON `order`.`sid` = `order_detail`.`order_id` WHERE  `order`.`shop_id`=?"
+
+    const [rows] = await db.query(sql, [shop_id])
+
+    console.log(rows)
+
+    rows.forEach(i => {
+        i.create_at = dayjs(i.create_at).format('YYYY-MM-DD HH:mm:ss')
+    })
+
+    let order_items = []
+    rows.map((v, i) => {
+        order_items.push(v.order_item)
+    })
+    console.log(order_items)
+    console.log('rowssssssssssssssssss')
+    console.log(rows)
+    console.log('rowssssssssssssssssss')
+    let output_info = []
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i].sid == rows[i - 1].sid) {
+            output_info.push({
+                sid: rows[i].sid,
+                status: rows[i].status,
+                order_item: [rows[i].order_items]
+            })
+        }
+    }
+
+    const uniqueObjects = output_info.reduce((accumulator, currentValue) => {
+        if (!accumulator[currentValue.sid]) {
+            accumulator[currentValue.sid] = currentValue;
+        }
+        return accumulator;
+    }, {});
+
+    const result = Object.values(uniqueObjects);
+    console.log('----------------------------------------')
+    console.log(result);
+    console.log('----------------------------------------')
+    const groupedOrderItems = rows.reduce((accumulator, currentValue) => {
+        const { sid, order_item, order_num, amount, price, status, create_at } = currentValue;
+        if (!accumulator[sid]) {
+            accumulator[sid] = [{ order_item, order_num, amount, price, status, sid, create_at }];
+        } else {
+            accumulator[sid].push({ order_item, order_num, amount, price, status, sid, create_at });
+        }
+        return accumulator;
+    }, {});
+
+    console.log(groupedOrderItems);
+
+    let order_amount = []
+    rows.map((v, i) => {
+        order_amount.push(v.order_num)
+    })
+    console.log(order_amount)
+
+    let order_price = []
+    rows.map((v, i) => {
+        order_price.push(v.price)
+    })
+
+    console.log(order_price)
+
+    console.log('分隔線')
+    const outputResult = result.map((v, i) => {
+        if (rows[i].sid == v.sid) {
+            return { ...result, order_items: order_items }
+        }
+    })
+    console.log('分隔線123')
+    console.log(outputResult)
+    console.log('分隔線123')
+
+    const order_output_all = []
+    const order_output = {}
+    order_output.order_item = order_items;
+    order_output.order_amount = order_amount;
+    order_output.price = order_price
+    order_output.sid = rows[0].sid;
+    order_output.shop_id = rows[0].shop_id;
+    order_output.amount = rows[0].amount;
+    order_output.status = rows[0].status;
+    order_output.create_at = rows[0].create_at
+    console.log(order_output)
+    // console.log(row)
+    // [
+    //     {
+    //       sid: 1,
+    //       status: '未完成',
+    //       shop_id: 31,
+    //       amount: 3120,
+    //       memo: '不要免洗餐具',
+    //       create_at: '2023-07-31 14:15:00',
+    //       food_id: 60,
+    //       order_item: '去骨牛小排',
+    //       order_num: 2,
+    //       price: 680
+    //     },
+    //     {
+    //       sid: 1,
+    //       status: '未完成',
+    //       shop_id: 31,
+    //       amount: 3120,
+    //       memo: '不要免洗餐具',
+    //       create_at: '2023-07-31 14:15:00',
+    //       food_id: 61,
+    //       order_item: '紐西蘭菲力牛排',
+    //       order_num: 1,
+    //       price: 480
+    //     },
+    //     {
+    //       sid: 1,
+    //       status: '未完成',
+    //       shop_id: 31,
+    //       amount: 3120,
+    //       memo: '不要免洗餐具',
+    //       create_at: '2023-07-31 14:15:00',
+    //       food_id: 62,
+    //       order_item: '美國紐約頂級牛排',
+    //       order_num: 1,
+    //       price: 600
+    //     },
+    //     {
+    //       sid: 1,
+    //       status: '未完成',
+    //       shop_id: 31,
+    //       amount: 3120,
+    //       memo: '不要免洗餐具',
+    //       create_at: '2023-07-31 14:15:00',
+    //       food_id: 63,
+    //       order_item: '燒烤無骨牛小排',
+    //       order_num: 1,
+    //       price: 680
+    //     }
+    //   ]
+
+    output.order = [rows]
+    output.order_item = order_items
+    output.order_amount = order_amount
+
+    order_output.groupedOrderItems = Object.values(groupedOrderItems);
+
+    res.json(order_output)
+})
 
 // 取得單筆資料(驗證過登入)
 router.get('/api/verify/:sid', async (req, res) => {
@@ -796,7 +1211,7 @@ router.post('/add-try', resMultipartParser, async (req, res) => {
 });
 
 // 把修改完的資料寫回資料庫(寫在這是因為另一個商品的put是用動態路由，不寫在其前面會出錯)
-router.put('/res-setting', async(req,res)=>{
+router.put('/res-setting', async (req, res) => {
     // res.json(req.body)
     const output = {
         success: false,
@@ -930,32 +1345,32 @@ router.put('/res-setting', async(req,res)=>{
     }
 
     // 判斷營業日期
-    const openTimeArray = [0,0,0,0,0,0,0,]
+    const openTimeArray = [0, 0, 0, 0, 0, 0, 0,]
     const openDays = req.body.open_days // array
-    for (let openday of openDays){
-        if (openday == '星期一'){
+    for (let openday of openDays) {
+        if (openday == '星期一') {
             openTimeArray[0] = 1
-        }else if(openday == '星期二'){
+        } else if (openday == '星期二') {
             openTimeArray[1] = 1
-        }else if(openday == '星期三'){
+        } else if (openday == '星期三') {
             openTimeArray[2] = 1
-        }else if(openday == '星期四'){
+        } else if (openday == '星期四') {
             openTimeArray[3] = 1
-        }else if(openday == '星期五'){
+        } else if (openday == '星期五') {
             openTimeArray[4] = 1
-        }else if(openday == '星期六'){
+        } else if (openday == '星期六') {
             openTimeArray[5] = 1
-        }else if(openday == '星期日'){
+        } else if (openday == '星期日') {
             openTimeArray[6] = 1
         }
     }
 
     // 先修改shops資料表，再修改res_opentime資料表
-    const updateShopSQL = "UPDATE `shops` SET `"+
-    "account`=?,`shop`=?,`owner`=?,`category`=?,`res_desc`=?,"+
-    "`avg_consumption`=?,`photo`=?,`city`=?,`area`=?,`location`=?,"+
-    "`phone`=?,`latitude`=?,`longitude`=? WHERE sid=?";
-    const [shopUpdateResult] = await db.query(updateShopSQL,[
+    const updateShopSQL = "UPDATE `shops` SET `" +
+        "account`=?,`shop`=?,`owner`=?,`category`=?,`res_desc`=?," +
+        "`avg_consumption`=?,`photo`=?,`city`=?,`area`=?,`location`=?," +
+        "`phone`=?,`latitude`=?,`longitude`=? WHERE sid=?";
+    const [shopUpdateResult] = await db.query(updateShopSQL, [
         req.body.account,
         req.body.shopname,
         req.body.owner,
@@ -972,12 +1387,12 @@ router.put('/res-setting', async(req,res)=>{
         req.body.shopId,
     ])
 
-    const updateOpenTimeSQL = "UPDATE `res_opentime` SET"+
-    " `open_time`=?,`close_time`=?,"+
-    "`Monday`=?,`Tuesday`=?,`Wednesday`=?,"+
-    "`Thursday`=?,`Friday`=?,`Saturday`=?,`Sunday`=?"+
-    " WHERE res_id=?"
-    const [openTimeUpdateResult] = await db.query(updateOpenTimeSQL,[
+    const updateOpenTimeSQL = "UPDATE `res_opentime` SET" +
+        " `open_time`=?,`close_time`=?," +
+        "`Monday`=?,`Tuesday`=?,`Wednesday`=?," +
+        "`Thursday`=?,`Friday`=?,`Saturday`=?,`Sunday`=?" +
+        " WHERE res_id=?"
+    const [openTimeUpdateResult] = await db.query(updateOpenTimeSQL, [
         req.body.open_time,
         req.body.close_time,
         openTimeArray[0],
@@ -1179,7 +1594,7 @@ router.post('/res-setting-password', async (req, res) => {
         error: '',
         data: null
     }
-    let body = req.body 
+    let body = req.body
     let resId = req.body.resId
     let oldPassword = req.body.oldPassword;
     let newPassword = req.body.newPassword

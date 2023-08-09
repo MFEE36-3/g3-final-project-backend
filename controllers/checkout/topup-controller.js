@@ -130,3 +130,59 @@ exports.easy_topup = async (req, res) => {
         });
     }
 }
+
+exports.premiumUpgrade = async (req, res) => {
+    const { sid } = req.body;
+    const member_id = res.locals.jwtData.id;
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        const member = await Member.member_info.findOne({
+            where: {
+                sid: member_id
+            }
+        });
+
+        const member_level_card = await Member.member_level_card.findOne({
+            where: {
+                sid: sid
+            }
+        });
+
+        if (!member_level_card) {
+            throw new Error("會員等級卡不存在");
+        }
+
+        if (member.wallet < member_level_card.price) {
+            throw new Error("錢包餘額不足");
+        }
+
+        await Member.member_wallet_record.create({
+            member_id: member_id,
+            amount: -(member_level_card.price),
+            content: `購買 ${member_level_card.name}`,
+        },{ transaction });
+
+        await Member.member_info.update({
+            wallet: member.wallet - member_level_card.price,
+            level: 2
+        }, {
+            where: {
+                sid: member_id
+            }
+        }, { transaction });
+
+        await transaction.commit();
+        return res.status(200).json({
+            success: true,
+            message: "升級成功"
+        });
+    }
+    catch (error) {
+        await transaction.rollback();
+        return res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+}

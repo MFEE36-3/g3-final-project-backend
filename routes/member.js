@@ -207,6 +207,25 @@ router.post("/add", upload.single("photo"), async (req, res) => {
         1,
     ]);
 
+
+    // 從這裡開始插優惠券
+    // 獲取最新的insert值
+    const member_id = result.insertId;
+
+    const sql2 = `INSERT INTO user_coupon
+    (member_id,coupon_sid,coupon_status_sid,coupon_get_time,coupon_dead_time)
+    VALUES(?,?,?,NOW(),?)`;
+
+    const last_day = dayjs(Date.now()).add(30, 'day').format('YYYY-MM-DD');
+
+    const [result2] = await db.query(sql2, [
+        member_id,
+        1,
+        1,
+        last_day,
+    ])
+
+
     res.json({
         result,
         postData: req.body,

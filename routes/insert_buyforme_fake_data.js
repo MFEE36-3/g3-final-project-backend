@@ -141,6 +141,7 @@ const order_instructions = [
 ];
 
 
+// 建立開團單假資料
 router.get('/openforyou', async (req, res) => {
 
     let output = {
@@ -176,7 +177,7 @@ router.get('/openforyou', async (req, res) => {
 });
 
 
-
+// 建立跟團單假資料
 router.get('/buyforme', async (req, res) => {
 
     let output = {
@@ -217,6 +218,7 @@ router.get('/buyforme', async (req, res) => {
 });
 
 
+// 建立跟團單細項假資料
 router.get('/buyforme_detail', async (req, res) => {
 
     let output = {
@@ -252,6 +254,101 @@ router.get('/buyforme_detail', async (req, res) => {
         rows.push(result);
     }
 
+    output = { ...output, rows }
+
+    return res.json(output);
+});
+
+
+// 新增特定時間點過期優惠券 狀態僅未使用及已過期
+router.get('/setusercoupon', async (req, res) => {
+
+    let output = {
+        rows: []
+    }
+
+    let rows = [];
+
+
+    const sql = `SELECT coupon_sid, coupon_deadline FROM coupon`;
+    [coupon_array] = await db.query(sql);
+
+    const sql2 = `INSERT INTO user_coupon
+    (member_id,coupon_sid,coupon_status_sid,coupon_get_time,coupon_dead_time)
+    VALUES(?,?,?,?,?)`;
+
+    for (j = 1; j < 201; j++) {        //會員人數
+
+        for (i = 0; i < coupon_array.length; i++) {
+
+            let no_buy = Math.round(Math.random());
+
+            if (no_buy === 0 && i !== 0) continue;
+
+            //是否過期 
+            const get_time = meet_time[Math.floor(meet_time.length * Math.random())];
+            const last_day = dayjs(get_time).add(coupon_array[i].coupon_deadline, 'day');
+            const status = dayjs('2023-08-16') > last_day ? 3 : 1
+
+
+            const result = await db.query(sql2, [
+                j,
+                coupon_array[i].coupon_sid,
+                status,
+                meet_time[Math.floor(meet_time.length * Math.random())],
+                last_day.format('YYYY-MM-DD'),
+            ])
+
+            rows.push(result);
+        }
+    }
+    output = { ...output, rows }
+
+    return res.json(output);
+});
+
+// 新增已使用優惠券
+router.get('/setused_usercoupon', async (req, res) => {
+
+    let output = {
+        rows: []
+    }
+
+    let rows = [];
+
+
+    const sql = `SELECT coupon_sid, coupon_deadline FROM coupon`;
+    [coupon_array] = await db.query(sql);
+
+    const sql2 = `INSERT INTO user_coupon
+    (member_id,coupon_sid,coupon_status_sid,coupon_get_time,coupon_dead_time,coupon_use_time)
+    VALUES(?,?,?,?,?,?)`;
+
+    for (j = 1; j < 201; j++) {        //會員人數
+
+        for (i = 1; i < coupon_array.length; i++) {
+
+            let no_buy = Math.round(Math.random());
+
+            if (no_buy === 0) continue;
+
+            const get_time = meet_time[Math.floor(meet_time.length * Math.random())];
+            const last_day = dayjs(get_time).add(coupon_array[i].coupon_deadline, 'day');
+            const use_time = dayjs(get_time).add(coupon_array[i].coupon_deadline - 1, 'day') > dayjs('2023-08-16') ? dayjs('2023-08-16') : dayjs(get_time).add(coupon_array[i].coupon_deadline - 1, 'day');
+
+
+            const result = await db.query(sql2, [
+                j,
+                coupon_array[i].coupon_sid,
+                2,
+                meet_time[Math.floor(meet_time.length * Math.random())],
+                last_day.format('YYYY-MM-DD'),
+                use_time.format('YYYY-MM-DD')
+            ])
+
+            rows.push(result);
+        }
+    }
     output = { ...output, rows }
 
     return res.json(output);

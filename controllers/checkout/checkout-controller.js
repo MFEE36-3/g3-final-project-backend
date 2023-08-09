@@ -332,3 +332,124 @@ exports.buyForMeCheckout = async (req, res) => {
         });
     }
 }
+
+exports.foodCheckout = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    const { shop_id, amount, order_date, order_time, foods, payment_info } = req.body;
+    const userId = res.locals.jwtData.id;
+    let { coupon_sid, shipfee } = payment_info;
+    /*
+        foods: [
+            {
+                food_id: 1,
+                order_item: "name",
+                order_num: 1,
+                price: 100
+            },
+            {
+                food_id: 2,
+                order_item: "name",
+                order_num: 1,
+                price: 100
+            }
+        ]
+    }
+    */
+
+    try {
+        // Get member
+        const member = await Member.member_info.findOne({
+            where: {
+                sid: userId
+            }
+        });
+
+        // If member level > 1, shipfee = 0
+        if (member.level > 1) {
+            shipfee = 0;
+        }
+
+        let discount = 0;
+        // Get coupon
+        if (coupon_sid) {
+            const coupon = await getCoupon(userId, coupon_sid);
+            discount = coupon.coupon.coupon_discount;
+        }
+
+        const total_price = amount - discount + shipfee;
+        // Check if the wallet is enough
+        if (member.wallet < total_price) {
+            throw new Error('Not enough money');
+        }
+
+        // Create the order
+        const order = await Shop.food_orders.create({
+            shop_id: shop_id,
+            Id: userId,
+            amount: total_price,
+            order_date: order_date,
+            order_time: order_time,
+            status: 0,
+        }, { transaction });
+
+        if (!order.sid) {
+            throw new Error('Order create failed');
+        }
+
+        // Create the order items
+        for (const food of foods) {
+            await Shop.food_order_detail.create({
+                order_id: order.sid,
+                food_id: food.food_id,
+                order_item: food.order_item,
+                order_num: food.order_num,
+                price: food.price
+            }, { transaction });
+        }
+
+        // update wallet
+        await Member.member_info.update({
+            wallet: member.wallet - total_price
+        }, {
+            where: {
+                sid: userId
+            }
+        }, { transaction });
+
+        await Member.member_wallet_record.create({
+            member_id: userId,
+            amount: -(total_price + discount + shipfee),
+            content: `購買 ${foods[0].order_item} 等商品`,
+        }, {
+            transaction
+        });
+
+        if (coupon_sid) {
+            // update coupon status
+            await Member.user_coupon.update({
+                coupon_status_sid: 2,
+                coupon_use_time: new Date()
+            }, {
+                where: {
+                    member_id: userId,
+                    get_coupon_sid: coupon_sid
+                }
+            }, { transaction });
+        }
+
+        // Commit the transaction
+        await transaction.commit();
+
+        res.status(200).send({
+            message: "Food order create successful!",
+            order_sid: order.sid
+        });
+    } catch (error) {
+        // Rollback the transaction
+        await transaction.rollback();
+
+        res.status(400).send({
+            error: error.message
+        });
+    }
+}

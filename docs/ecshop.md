@@ -213,6 +213,41 @@ Body Payload:
 }
 ```
 
+## Food
+
+### POST /ecshop/checkout/food (NEED JWT)
+
+Create order for food, and return order_id, just support 'wallet' payment type.
+
+Body Json:
+```javascript
+{
+    "shop_id": 1,
+    "amount": 200, //total amount of items (exclude shipfee & coupon)
+    "order_date": "2023/08/01",
+    "order_time": "15:00",
+    "foods": [
+        {
+            "food_id": 1,
+            "order_item": "name",
+            "order_num": 1,
+            "price": 100
+        },
+        {
+            "food_id": 2,
+            "order_item": "name",
+            "order_num": 1,
+            "price": 100
+        }
+    ],
+    "payment_info": {
+        "shipfee": 600, // If this member is VIP, shipfee would be 0
+        "coupon_sid": 55
+    }
+}
+
+```
+
 Response:
 ```javascript
 {

@@ -258,7 +258,7 @@ router.post('/openforyou', async (req, res) => {
     (open_member_id,meet_time,meet_place,target_store,tip,open_status)
     VALUES(?,?,?,?,?,?)`;
 
-    const result = await db.query(sql, [
+    const [result] = await db.query(sql, [
         open_member_id,
         meet_time,
         meet_place,
@@ -306,7 +306,7 @@ router.post('/setbuyforme', async (req, res) => {
     // 獲取最新的insert值
     const order_sid = result[0].insertId;
 
-    const result2 = await Promise.all(
+    const [result2] = await Promise.all(
 
         order_detail.map(async (v) => {
             const response = await db.query(sql2, [
@@ -324,6 +324,7 @@ router.post('/setbuyforme', async (req, res) => {
     res.json({
         result,
         result2,
+        order_sid,
         postData: req.body
     })
 });
@@ -342,7 +343,7 @@ router.post('/finishbuyforme', async (req, res) => {
     SET wallet = wallet + ?
     WHERE sid = ?`;
 
-    const result = await db.query(sql, [
+    const [result] = await db.query(sql, [
         order_amount,
         open_member_id
     ])
@@ -352,7 +353,7 @@ router.post('/finishbuyforme', async (req, res) => {
     (member_id,amount,content,add_time) 
     VALUES(?,?,?,NOW())`;
 
-    const result2 = await db.query(sql2, [
+    const [result2] = await db.query(sql2, [
         open_member_id,
         order_amount,
         '訂單費用加跑腿費'
@@ -364,7 +365,7 @@ router.post('/finishbuyforme', async (req, res) => {
     SET order_status = 2
     WHERE order_sid = ?`;
 
-    const result3 = await db.query(sql3, [
+    const [result3] = await db.query(sql3, [
         order_sid
     ])
 
@@ -372,6 +373,31 @@ router.post('/finishbuyforme', async (req, res) => {
         result,
         result2,
         result3,
+        postData: req.body
+    })
+});
+
+// 結帳後修改訂單狀態
+router.post('/checkout_buyforme', async (req, res) => {
+
+    // TODO: 檢查資料格式
+
+    const { order_sid } = req.body;
+
+
+    //把錢轉給跑腿者
+    const sql = `UPDATE buy_for_me 
+    SET order_status = ?
+    WHERE order_sid = ?`;
+
+    const [result] = await db.query(sql, [
+        1,
+        order_sid
+    ])
+
+
+    res.json({
+        result,
         postData: req.body
     })
 });

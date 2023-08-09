@@ -55,11 +55,33 @@ router.post("/login", async (req, res) => {
 
 // google登入的API
 router.post("/googlelogin", async (req, res) => {
+    const output = {
+        success: false,
+        code: 0,
+        error: "",
+    };
     const sql1 = `SELECT * FROM member_info WHERE google_uid = ? `;
     const [rows1] = await db.query(sql1, [req.body.uid]);
 
     if (rows1[0]) {
-        res.json(rows1);
+        // 包 jwt 傳給前端
+        const token = jwt.sign(
+            {
+                id: rows1[0].sid,
+                account: rows1[0].account,
+            },
+            process.env.JWT_SECRET
+        );
+        output.success = true;
+        output.data = {
+            sid: rows1[0].sid,
+            account: rows1[0].account,
+            nickname: rows1[0].nickname,
+            photo: rows1[0].photo,
+            length: 4,
+            token,
+        };
+        res.json(output);
     } else {
         const sql2 = `INSERT INTO member_info(
             account,
@@ -77,7 +99,30 @@ router.post("/googlelogin", async (req, res) => {
         ]);
         const sql3 = `SELECT * FROM member_info WHERE google_uid = ? `;
         const [rows2] = await db.query(sql3, [req.body.uid]);
-        res.json(rows2);
+
+        const sql4 = `INSERT INTO member_achieve_record (member_id, achieve_id, creates_at)
+        SELECT mi.sid, 1, NOW()
+        FROM member_info mi
+        WHERE mi.account = ? `;
+        await db.query(sql4, [req.body.email]);
+        // 包 jwt 傳給前端
+        const token = jwt.sign(
+            {
+                id: rows2[0].sid,
+                account: rows2[0].account,
+            },
+            process.env.JWT_SECRET
+        );
+        output.success = true;
+        output.data = {
+            sid: rows2[0].sid,
+            account: rows2[0].account,
+            nickname: rows2[0].nickname,
+            photo: rows2[0].photo,
+            length: 4,
+            token,
+        };
+        res.json(output);
     }
 });
 
@@ -169,17 +214,17 @@ router.post("/changeImage", upload.single("preImg"), async (req, res) => {
 // 註冊會員的API
 router.post("/add", upload.single("photo"), async (req, res) => {
     const sql = `INSERT INTO member_info(
-        account, 
-        password, 
-        name, 
-        nickname, 
-        mobile, 
-        birthday, 
-        address, 
-        level, 
-        wallet, 
-        photo, 
-        creat_at, 
+        account,
+        password,
+        name,
+        nickname,
+        mobile,
+        birthday,
+        address,
+        level,
+        wallet,
+        photo,
+        creat_at,
         achieve
         ) VALUES (
             ?,?,?,?,?,
@@ -187,11 +232,14 @@ router.post("/add", upload.single("photo"), async (req, res) => {
             NOW(),?)`;
 
     let birthday = dayjs(req.body.birthday);
+
     if (birthday.isValid()) {
         birthday = birthday.format("YYYY-MM-DD");
     } else {
         birthday = null;
     }
+
+    const filename = req.body.filename || "member.jpg";
 
     const [result] = await db.query(sql, [
         req.body.account,
@@ -203,22 +251,29 @@ router.post("/add", upload.single("photo"), async (req, res) => {
         req.body.address,
         1,
         0,
-        req.file.filename,
+        filename,
         1,
     ]);
+
+    const sql2 = `INSERT INTO member_achieve_record (member_id, achieve_id, creates_at)
+        SELECT mi.sid, 1, NOW()
+        FROM member_info mi
+        WHERE mi.account = ? `;
+
+    await db.query(sql2, [req.body.account]);
 
 
     // 從這裡開始插優惠券
     // 獲取最新的insert值
     const member_id = result.insertId;
 
-    const sql2 = `INSERT INTO user_coupon
+    const sql3 = `INSERT INTO user_coupon
     (member_id,coupon_sid,coupon_status_sid,coupon_get_time,coupon_dead_time)
     VALUES(?,?,?,NOW(),?)`;
 
     const last_day = dayjs(Date.now()).add(30, 'day').format('YYYY-MM-DD');
 
-    const [result2] = await db.query(sql2, [
+    const [result2] = await db.query(sql3, [
         member_id,
         1,
         1,

@@ -788,6 +788,7 @@ router.get('/item-management/editItem/:food_id', async (req, res) => {
 
     console.log('------result-------')
     console.log(result)
+    console.log('------result-------')
 
 
     if (!result.length) {
@@ -1238,6 +1239,13 @@ router.post('/getTogoOrder', async (req, res) => {
 
     order_output.groupedOrderItems = Object.values(groupedOrderItems);
 
+
+    console.log(order_output.groupedOrderItems.length)  // 118
+
+    const perPage = 10
+    const totalPages = Math.ceil(order_output.groupedOrderItems.length / perPage)
+    order_output.totalPages = totalPages
+    console.log(totalPages)
     res.json(order_output)
 })
 
@@ -1530,7 +1538,15 @@ router.post('/getShopData', async (req, res) => {
 
     const [rows] = await db.query(sql, [shop_id])
 
+    console.log('-------------rows------------------')
+    console.log(rows)
+    console.log('-------------rows------------------')
+
     const result = rows[0]
+
+    const phone = result.phone
+    result.phone = '0' + String(phone)
+    console.log(result)
 
     let res_cate = '';
     if (result.category == 1) {

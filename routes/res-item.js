@@ -1013,106 +1013,46 @@ router.post('/getTogoOrder', async (req, res) => {
         groupedOrderItems: [] // 新增一個空陣列
     }
     const shop_id = req.body.id
-    console.log(shop_id)
+    // console.log(shop_id)
 
-    const getListData = async (req, shop_id) => {
-        let output = {
-            redirect: "",
-            totalRows: 0,
-            perPage: 10,
-            totalPages: 0,
-            page: 1,
-            rows: [],
-        }
-    
-        const perPage = 10;
-    
-        // 在哪一個分頁(?page=...) => 用req.query
-        let page = req.query.page ? +req.query.page : 1;
-        console.log('---page---')
-        console.log(page)
-        console.log('---page---')
-    
-        console.log('---shop_id---')
-        console.log(req.query.shop_id)
-        console.log('---shop_id---')
-    
-        // 做搜尋功能:用queryString做
-        let keyword = req.query.keyword || '';
-        console.log('---keyword---')
-        console.log(keyword)
-        console.log('---keyword---')
-        // 防範如果page是NaN或0會回傳true
-        const baseUrl = req.baseUrl
-        if (!page || page < 1) {               
-            // 小於1或NaN、0時就導回到/ab
-            output.redirect = req.baseUrl
-            return output   // 不能用'/',會回到整個網站的根目錄，要用baseUrl
-        }
-    
-        // 以sql語法做關鍵字搜尋，先做出篩選條件
-        // let where = `WHERE 1`;
-        let where = `WHERE shop_id=${shop_id}`;
-        if (keyword) {
-            const kw_escaped = db.escape('%' + keyword + '%');
-            where += ` AND ( 
-              \`food_title\` LIKE ${kw_escaped} 
-              OR
-              \`food_des\` LIKE ${kw_escaped}
-              )
-            `;
-        }
-        // where += ` AND \`name\` LIKE ${ db.escape('%'+keyword+'%') } `;
-        // 未跳脫前:where += ` AND \`name\` LIKE '%${keyword}%' `
-        // 先看資料庫共有幾筆資料
-        const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
-        const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
-    
-        console.log('---totalRows---')
-        console.log(totalRows)
-        console.log('---totalRows---')
-    
-        let totalPages = 0;
-        // 計算有多少頁(假設總筆數totalRows不為0)
-        if (totalRows) {
-            totalPages = Math.ceil(totalRows / perPage)
-    
-            if (page > totalPages) {
-                output.redirect = req.baseUrl + '?page=' + totalPages
-                return output
-            }
-        }
-        console.log('---totalPages---')
-        console.log(totalPages)
-        console.log('---totalPages---')
-        let rows = [];
-        // 拿分頁的資料
-        const sql = `SELECT * FROM food_items ${where} ORDER BY food_id DESC LIMIT ${perPage * (page - 1)}, ${perPage}`;
-        [rows] = await db.query(sql)
-        // const [rows] = await db.query(sql) 也可以
-    
-        output = { ...output, totalRows, perPage, totalPages, page, baseUrl, keyword, rows }
-        return output
-    }
-
-    const sql = "SELECT `order`.`sid`,`status`,`shop_id`,`amount`,`memo`,`order`.`create_at`,`food_id`,`order_item`,`order_num`,`price` FROM `order` JOIN `order_detail` ON `order`.`sid` = `order_detail`.`order_id` WHERE  `order`.`shop_id`=?"
+    const sql = "SELECT `order`.`sid`,`status`,`shop_id`,`amount`,`memo`,`order`.`create_at`,`food_id`,`order_item`,`order_num`,`price` FROM `order` JOIN `order_detail` ON `order`.`sid` = `order_detail`.`order_id` WHERE  `order`.`shop_id`=? ORDER BY sid DESC"
 
     const [rows] = await db.query(sql, [shop_id])
 
-    console.log(rows)
-
+    // console.log('----------rows---------')
+    // console.log(rows)
+    // console.log('----------rows---------')
     rows.forEach(i => {
         i.create_at = dayjs(i.create_at).format('YYYY-MM-DD HH:mm:ss')
     })
+
+    const orderList = []
+    rows.map((v) => {
+        if(!orderList.includes(v.sid)) orderList.push(v.sid)
+    })
+    const orders = orderList.map((v)=>{
+        const order_detail = []
+        for(let i = 0; i < rows.length; i++){
+            if(rows[i].sid === v){
+                order_detail.push(rows[i])
+            }
+        }
+        return {order_sid:v,order_detail:order_detail}
+    })
+    console.log('------orders------')
+    console.log(orders)
+    console.log('------orders------')
+    res.json({orders})
+
 
     let order_items = []
     rows.map((v, i) => {
         order_items.push(v.order_item)
     })
-    console.log(order_items)
-    console.log('rowssssssssssssssssss')
-    console.log(rows)
-    console.log('rowssssssssssssssssss')
+    // console.log(order_items)
+    // console.log('rowssssssssssssssssss')
+    // console.log(rows)
+    // console.log('rowssssssssssssssssss')
     let output_info = []
     for (let i = 1; i < rows.length; i++) {
         if (rows[i].sid == rows[i - 1].sid) {
@@ -1132,9 +1072,9 @@ router.post('/getTogoOrder', async (req, res) => {
     }, {});
 
     const result = Object.values(uniqueObjects);
-    console.log('----------------------------------------')
-    console.log(result);
-    console.log('----------------------------------------')
+    // console.log('----------------------------------------')
+    // console.log(result);
+    // console.log('----------------------------------------')
     const groupedOrderItems = rows.reduce((accumulator, currentValue) => {
         const { sid, order_item, order_num, amount, price, status, create_at } = currentValue;
         if (!accumulator[sid]) {
@@ -1145,30 +1085,32 @@ router.post('/getTogoOrder', async (req, res) => {
         return accumulator;
     }, {});
 
-    console.log(groupedOrderItems);
+    // console.log('-----groupedOrderItems-----')
+    // console.log(groupedOrderItems);
+    // console.log('-----groupedOrderItems-----')
 
     let order_amount = []
     rows.map((v, i) => {
         order_amount.push(v.order_num)
     })
-    console.log(order_amount)
+    // console.log(order_amount)
 
     let order_price = []
     rows.map((v, i) => {
         order_price.push(v.price)
     })
 
-    console.log(order_price)
+    // console.log(order_price)
 
-    console.log('分隔線')
+    // console.log('分隔線')
     const outputResult = result.map((v, i) => {
         if (rows[i].sid == v.sid) {
             return { ...result, order_items: order_items }
         }
     })
-    console.log('分隔線123')
-    console.log(outputResult)
-    console.log('分隔線123')
+    // console.log('分隔線123')
+    // console.log(outputResult)
+    // console.log('分隔線123')
 
     const order_output_all = []
     const order_output = {}
@@ -1180,7 +1122,7 @@ router.post('/getTogoOrder', async (req, res) => {
     order_output.amount = rows[0].amount;
     order_output.status = rows[0].status;
     order_output.create_at = rows[0].create_at
-    console.log(order_output)
+    // console.log(order_output)
     // console.log(row)
     // [
     //     {
@@ -1240,13 +1182,13 @@ router.post('/getTogoOrder', async (req, res) => {
     order_output.groupedOrderItems = Object.values(groupedOrderItems);
 
 
-    console.log(order_output.groupedOrderItems.length)  // 118
+    // console.log(order_output.groupedOrderItems.length)  // 118
 
     const perPage = 10
     const totalPages = Math.ceil(order_output.groupedOrderItems.length / perPage)
     order_output.totalPages = totalPages
-    console.log(totalPages)
-    res.json(order_output)
+    // console.log(totalPages)
+    // res.json(order_output)
 })
 
 // 取得單筆資料(驗證過登入)
@@ -1694,19 +1636,39 @@ router.post('/res-setting-password', async (req, res) => {
     let newPassword = req.body.newPassword
     const getShopSQL = "SELECT * FROM `shops` WHERE sid=?"
     const [getShop] = await db.query(getShopSQL, [resId])
+    console.log(getShop)
 
-    if (getShop[0].password !== oldPassword) {
+    const verify = await bcrypt.compare(req.body.oldPassword, getShop[0].password);
+    console.log(verify);
+
+    if (!verify) {
         console.log('密碼驗證不符')
         output.error = '密碼不符合!'
         return res.json(output)
     } else {
         console.log('密碼驗證正確')
+        const salt = bcrypt.genSaltSync(10)
+        const hashPassword = await bcrypt.hash(req.body.newPassword, salt)
+
         const changePasswordSQL = "UPDATE `shops` SET `password`=? WHERE sid=?"
-        const [result] = await db.query(changePasswordSQL, [newPassword, resId])
+        const [result] = await db.query(changePasswordSQL, [hashPassword, resId])
         output.success = true
         output.shopData = result
         return res.json(output)
     }
+
+    // if (getShop[0].password !== oldPassword) {
+    //     console.log('密碼驗證不符')
+    //     output.error = '密碼不符合!'
+    //     return res.json(output)
+    // } else {
+    //     console.log('密碼驗證正確')
+    //     const changePasswordSQL = "UPDATE `shops` SET `password`=? WHERE sid=?"
+    //     const [result] = await db.query(changePasswordSQL, [newPassword, resId])
+    //     output.success = true
+    //     output.shopData = result
+    //     return res.json(output)
+    // }
 
     // res.json({body,getShop})
 

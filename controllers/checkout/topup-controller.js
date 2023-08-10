@@ -152,6 +152,9 @@ exports.premiumUpgrade = async (req, res) => {
         if (!member_level_card) {
             throw new Error("會員等級卡不存在");
         }
+        const day_added = parseInt(member_level_card.name.replace('尊榮會員','').replace('個月','')) * 30;
+        const expired_at = member.dead_time ? new Date(member.dead_time) : new Date();
+        expired_at.setDate(expired_at.getDate() + day_added);
 
         if (member.wallet < member_level_card.price) {
             throw new Error("錢包餘額不足");
@@ -165,7 +168,8 @@ exports.premiumUpgrade = async (req, res) => {
 
         await Member.member_info.update({
             wallet: member.wallet - member_level_card.price,
-            level: 2
+            level: 2,
+            dead_time: expired_at
         }, {
             where: {
                 sid: member_id

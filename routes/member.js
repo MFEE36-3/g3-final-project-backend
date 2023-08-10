@@ -236,7 +236,7 @@ router.post("/add", upload.single("photo"), async (req, res) => {
     } else {
         birthday = null;
     }
-    const filename = req.file.filename || "member.jpg";
+    const filename = req.file?.filename || "member.jpg";
     const [result] = await db.query(sql, [
         req.body.account,
         bcrypt.hashSync(req.body.password, 10),
@@ -404,13 +404,13 @@ router.get("/favoritePost", async (req, res) => {
     f.user_id AS member_id,
     mi.nickname
 FROM
-    forum_favorite AS ff
+    forum_like AS ff
 JOIN
     forum AS f ON ff.forum_sid = f.forum_sid
 JOIN
     member_info AS mi ON f.user_id = mi.sid
 WHERE
-    ff.member_sid = ?
+    ff.user_id = ?
 `;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);

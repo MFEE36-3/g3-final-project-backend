@@ -166,7 +166,7 @@ router.post("/get-member-collect", async (req, res) => {
 router.get("/message", async (req, res) => {
   let output = {
     totalRows: 0,
-    perPage: 10, // 每頁顯示的新聞筆數
+    perPage: 10, // 每頁顯示的文章筆數
     totalPages: 0,
     page: 1,
     article: [],
@@ -191,35 +191,35 @@ router.get("/message", async (req, res) => {
   if (orderBy) {
     order = `ORDER BY f.publishedTime ${orderBy}`;
   }
-//   const sql = `
-// //   SELECT 
-// //   f.forum_sid,
-// //   f.header,
-// //   f.publishedTime,
-// //   f.content AS forum_content,
-// //   f.photo AS forum_photo,
-// //   mi.sid AS member_sid,
-// //   mi.nickname,
-// //   mi.photo AS user_photo,
-// //   COALESCE(c.comment_count, 0) AS comment_count,
-// //   COALESCE(l.like_count, 0) AS like_count
-// // FROM forum f
-// // JOIN member_info mi ON f.user_id = mi.sid
-// // LEFT JOIN (
-// //     SELECT forum_sid, COUNT(comment_content) AS comment_count
-// //     FROM message
-// //     GROUP BY forum_sid
-// // ) c ON f.forum_sid = c.forum_sid
-// // LEFT JOIN (
-// //     SELECT forum_sid, COUNT(like_sid) AS like_count
-// //     FROM forum_like
-// //     GROUP BY forum_sid
-// // ) l ON f.forum_sid = l.forum_sid
-// // ${where}
-// // ${order}
-// // LIMIT ${offset}, ${limit}
-// // `;
-const sql = `SELECT 
+  //   const sql = `
+  // //   SELECT
+  // //   f.forum_sid,
+  // //   f.header,
+  // //   f.publishedTime,
+  // //   f.content AS forum_content,
+  // //   f.photo AS forum_photo,
+  // //   mi.sid AS member_sid,
+  // //   mi.nickname,
+  // //   mi.photo AS user_photo,
+  // //   COALESCE(c.comment_count, 0) AS comment_count,
+  // //   COALESCE(l.like_count, 0) AS like_count
+  // // FROM forum f
+  // // JOIN member_info mi ON f.user_id = mi.sid
+  // // LEFT JOIN (
+  // //     SELECT forum_sid, COUNT(comment_content) AS comment_count
+  // //     FROM message
+  // //     GROUP BY forum_sid
+  // // ) c ON f.forum_sid = c.forum_sid
+  // // LEFT JOIN (
+  // //     SELECT forum_sid, COUNT(like_sid) AS like_count
+  // //     FROM forum_like
+  // //     GROUP BY forum_sid
+  // // ) l ON f.forum_sid = l.forum_sid
+  // // ${where}
+  // // ${order}
+  // // LIMIT ${offset}, ${limit}
+  // // `;
+  const sql = `SELECT 
 f.forum_sid,
 f.header,
 f.publishedTime,
@@ -230,35 +230,41 @@ mi.nickname,
 mi.photo AS user_photo,
 COALESCE(c.comment_count, 0) AS comment_count,
 COALESCE(l.like_count, 0) AS like_count,
-ll.like_it AS liked_by_user_id,
-CASE WHEN ll.like_it IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
+ll.like_it AS liked_by_user_id
 FROM forum f
 JOIN member_info mi ON f.user_id = mi.sid
 LEFT JOIN (
-SELECT forum_sid, COUNT(comment_content) AS comment_count
-FROM message
-GROUP BY forum_sid
+  SELECT forum_sid, COUNT(comment_content) AS comment_count
+  FROM message
+  GROUP BY forum_sid
 ) c ON f.forum_sid = c.forum_sid
 LEFT JOIN (
-SELECT forum_sid, COUNT(like_sid) AS like_count
-FROM forum_like
-GROUP BY forum_sid
+  SELECT forum_sid, COUNT(like_sid) AS like_count
+  FROM forum_like
+  GROUP BY forum_sid
 ) l ON f.forum_sid = l.forum_sid
 LEFT JOIN (
-SELECT forum_sid AS like_it, member_sid, date
-FROM forum_favorite
+  SELECT forum_sid AS like_it
+  FROM forum_like
+  WHERE user_id = 1
 ) ll ON f.forum_sid = ll.like_it
  ${where}
  ${order}
  LIMIT ${offset}, ${limit}
-`
+`;
 
   const [article] = await db.query(sql);
+  output.article = article;
 
   // let searchResult = [];
-
-  res.json(article);
-  console.log(article);
+  const [totalRows] = await db.query(`
+  SELECT COUNT(*) AS totalRows FROM forum f
+  ${where}
+`);
+  output.totalRows = totalRows[0].totalRows;
+  output.totalPages = Math.ceil(output.totalRows / limit);
+  res.json(output);
+  console.log(output);
 });
 
 // 在留言拿到使用者頭像
@@ -292,41 +298,32 @@ router.post("/addmessage", async (req, res) => {
 router.post("/handle-like-list", async (req, res) => {
   // res.json(req.body)
   const clickHeart = req.body.arr[0].clickHeart;
-  const member_sid=req.body.member_id;
-  const article_sid=req.body.arr[0].forum_sid
+  const member_sid = req.body.member_id;
+  const article_sid = req.body.arr[0].forum_sid;
   const body = req.body;
-  console.log({member_sid,article_sid})
-  console.log(body)
+  console.log({ member_sid, article_sid });
+  console.log(body);
   // clickHeart == true:要新增收藏
   if (clickHeart) {
     const checkSQL =
       "SELECT * FROM `forum_like` WHERE user_id=? AND forum_sid=?";
-    const [row] = await db.query(checkSQL, [
-      member_sid,
-      article_sid
-    ]);
+    const [row] = await db.query(checkSQL, [member_sid, article_sid]);
     if (row.length) {
       // 資料庫已經有這個按讚的資料了，直接return空值
       return res.json(req.body);
     } else {
       // 資料庫沒有這筆資料:新增進去
-      
+
       const insertSQL =
         "INSERT INTO `forum_like`(`user_id`, `forum_sid`) VALUES (?,?)";
-      const [result] = await db.query(insertSQL, [
-        member_sid,
-        article_sid
-      ]);
+      const [result] = await db.query(insertSQL, [member_sid, article_sid]);
       console.log("insert : " + result);
     }
   } else {
     // clickHeart == false:要移除收藏
     const deleteSQL =
       "DELETE FROM `forum_like` WHERE user_id=? AND forum_sid=?;";
-    const [row] = await db.query(deleteSQL, [
-      member_sid,
-      article_sid
-    ]);
+    const [row] = await db.query(deleteSQL, [member_sid, article_sid]);
     console.log("delete row : " + row);
   }
 
@@ -336,17 +333,14 @@ router.post("/handle-like-list", async (req, res) => {
 //處理蒐藏收藏的api
 router.post("/handle-collect-list", async (req, res) => {
   const clickCollect = req.body.arr[0].clickCollect;
-  const member_sid=req.body.member_id;
-  const article_sid=req.body.arr[0].forum_sid
+  const member_sid = req.body.member_id;
+  const article_sid = req.body.arr[0].forum_sid;
   const body = req.body;
   // clickCollect == true:要新增收藏
   if (clickCollect) {
     const checkSQL =
       "SELECT `member_sid`, `forum_sid`, `date` FROM `forum_favorite` WHERE `member_sid` = ? AND `forum_sid` = ?;";
-    const [row] = await db.query(checkSQL, [
-      member_sid,
-      article_sid
-    ]);
+    const [row] = await db.query(checkSQL, [member_sid, article_sid]);
     if (row.length) {
       // 資料庫已經有這個按讚的資料了，直接return空值
       return res.json(req.body);
@@ -354,20 +348,14 @@ router.post("/handle-collect-list", async (req, res) => {
       // 資料庫沒有這筆資料:新增進去
       const insertSQL =
         "INSERT INTO `forum_favorite`(`member_sid`, `forum_sid`, `date`) VALUES (?,?,NOW())";
-      const [result] = await db.query(insertSQL, [
-        member_sid,
-        article_sid
-      ]);
+      const [result] = await db.query(insertSQL, [member_sid, article_sid]);
       console.log("insert : " + result);
     }
   } else {
     // clickHeart == false:要移除收藏
     const deleteSQL =
       "DELETE FROM `forum_favorite` WHERE member_sid=? AND forum_sid=?;";
-    const [row] = await db.query(deleteSQL, [
-      member_sid,
-      article_sid
-    ]);
+    const [row] = await db.query(deleteSQL, [member_sid, article_sid]);
     console.log("delete row : " + row);
   }
 
@@ -457,8 +445,35 @@ router.delete("/likelist/:rid", async (req, res) => {
     res.status(500).json({ error: "An error occurred" });
   }
 });
-//讀取收藏清單API
-router.get("/show-like", async (req, res) => {
+// //讀取收藏清單API
+// router.get("/show-like", async (req, res) => {
+//   let output = {
+//     success: true,
+//     likeDatas: [],
+//   };
+
+//   let member = "";
+//   if (res.locals.jwtData) {
+//     member = res.locals.jwtData.id;
+//   }
+
+//   let likeDatas = [];
+//   if (member) {
+//     const sql_likeList = `SELECT * FROM forum_like WHERE user_id = ${member}`;
+
+//     [likeDatas] = await db.query(sql_likeList);
+//     likeDatas.forEach((v) => {
+//       v.date = res.toDateString(v.date);
+//     });
+//   }
+//   console.log(likeDatas);
+//   output = {
+//     ...output,
+//     likeDatas,
+//   };
+//   return res.json(output);
+// });
+router.delete("/forum/:rid", async (req, res) => {
   let output = {
     success: true,
     likeDatas: [],
@@ -468,22 +483,21 @@ router.get("/show-like", async (req, res) => {
   if (res.locals.jwtData) {
     member = res.locals.jwtData.id;
   }
+  const { rid } = req.params;
+  let sql_deleteForum = "DELETE FROM `forum` WHERE ";
 
-  let likeDatas = [];
-  if (member) {
-    const sql_likeList = `SELECT * FROM forum_like WHERE user_id = ${member}`;
-
-    [likeDatas] = await db.query(sql_likeList);
-    likeDatas.forEach((v) => {
-      v.date = res.toDateString(v.date);
-    });
+  if (rid === "all") {
+    sql_deleteForum += `member_sid = '${member}'`;
+  } else {
+    sql_deleteForum += `member_sid = '${member}' AND forum_sid='${rid}'`;
   }
-  console.log(likeDatas);
-  output = {
-    ...output,
-    likeDatas,
-  };
-  return res.json(output);
-});
 
+  try {
+    const [result] = await db.query(sql_deleteForum);
+    res.json({ ...result });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "An error occurred" });
+  }
+});
 module.exports = router;

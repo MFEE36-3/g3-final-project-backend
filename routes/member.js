@@ -230,17 +230,13 @@ router.post("/add", upload.single("photo"), async (req, res) => {
             ?,?,?,?,?,
             ?,?,?,?,?,
             NOW(),?)`;
-
     let birthday = dayjs(req.body.birthday);
-
     if (birthday.isValid()) {
         birthday = birthday.format("YYYY-MM-DD");
     } else {
         birthday = null;
     }
-
-    const filename = req.body.filename || "member.jpg";
-
+    const filename = req.file.filename || "member.jpg";
     const [result] = await db.query(sql, [
         req.body.account,
         bcrypt.hashSync(req.body.password, 10),
@@ -254,14 +250,11 @@ router.post("/add", upload.single("photo"), async (req, res) => {
         filename,
         1,
     ]);
-
     const sql2 = `INSERT INTO member_achieve_record (member_id, achieve_id, creates_at)
         SELECT mi.sid, 1, NOW()
         FROM member_info mi
         WHERE mi.account = ? `;
-
     await db.query(sql2, [req.body.account]);
-
     res.json({
         result,
         postData: req.body,

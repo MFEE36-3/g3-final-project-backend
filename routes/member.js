@@ -281,6 +281,17 @@ router.post("/add", upload.single("photo"), async (req, res) => {
     });
 });
 
+// 檢查帳號是否已經存在的API
+router.post("/checkAccount", async (req, res) => {
+    const sql = `SELECT * FROM member_info WHERE account = ?`;
+    const [rows] = await db.query(sql, [req.body.account]);
+    if (rows[0]) {
+        res.json("帳號已創建");
+    } else {
+        res.json("帳號未創建");
+    }
+});
+
 // 拿到會員優惠券資料的API
 router.get("/coupon", async (req, res) => {
     const output = {

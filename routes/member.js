@@ -390,10 +390,17 @@ router.get("/favoritetStore", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT s.sid AS sid, s.shop AS restaurant_name, s.rating AS restaurant_rating, s.photo AS restaurant_photo, s.location AS restaurant_location FROM favorite f JOIN shops s ON f.shop_id = s.sid WHERE f.id = ?`;
+    const sql = `SELECT s.sid AS sid, s.shop AS restaurant_name, s.rating AS restaurant_rating, s.photo AS restaurant_photo, s.location AS restaurant_location , f.sid AS favorite_id FROM favorite f JOIN shops s ON f.shop_id = s.sid WHERE f.id = ?`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
+});
+
+// 刪除會員收藏店家的API
+router.delete("/deleteRest", async (req, res) => {
+    const sql = "DELETE FROM `favorite` WHERE sid = ?";
+    const [rows] = await db.query(sql, [req.body.sid]);
+    // console.log(rows);
 });
 
 // 拿到會員收藏貼文的API
@@ -426,6 +433,13 @@ WHERE
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
+});
+
+// 刪除會員收藏貼文的API
+router.delete("/deletePost", async (req, res) => {
+    const sql = "DELETE FROM `forum_like` WHERE like_sid = ?";
+    const [rows] = await db.query(sql, [req.body.sid]);
+    // console.log(rows);
 });
 
 // 拿到會員訂位的API

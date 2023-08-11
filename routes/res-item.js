@@ -43,7 +43,7 @@ const getListData = async (req, shop_id) => {
     console.log('---keyword---')
     // 防範如果page是NaN或0會回傳true
     const baseUrl = req.baseUrl
-    if (!page || page < 1) {               
+    if (!page || page < 1) {
         // 小於1或NaN、0時就導回到/ab
         output.redirect = req.baseUrl
         return output   // 不能用'/',會回到整個網站的根目錄，要用baseUrl
@@ -124,7 +124,7 @@ const getAllListData = async (req, shop_id) => {
     console.log('---keyword---')
     // 防範如果page是NaN或0會回傳true
     const baseUrl = req.baseUrl
-    if (!page || page < 1) {               
+    if (!page || page < 1) {
         // 小於1或NaN、0時就導回到/ab
         output.redirect = req.baseUrl
         return output   // 不能用'/',會回到整個網站的根目錄，要用baseUrl
@@ -650,10 +650,6 @@ router.post('/item-management', async (req, res) => {
     if (output.redirect) {
         return res.redirect(output.redirect)
     }
-    console.log(output)
-    console.log('-------req.query--------')
-    console.log(req.query)
-    console.log('-------req.query--------')
 
     output.rows.forEach(i => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
@@ -681,14 +677,6 @@ router.get('/item-management', async (req, res) => {
     //     return res.redirect(output.redirect)
     // }
 
-    console.log('---output---')
-    console.log(output)
-    console.log('---output---')
-
-    console.log('-------req.query--------')
-    console.log(req.query)
-    console.log('-------req.query--------')
-
     output.rows.forEach(i => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
         if (i.food_cate == 1) {
@@ -705,13 +693,12 @@ router.get('/item-management', async (req, res) => {
     })
 
     // console.log(output)
-    console.log('router.get')
     res.json(output)
 })
 
-router.post('/get-all-item-management', async(req,res) => {
+router.post('/get-all-item-management', async (req, res) => {
     const sql = "SELECT * FROM `food_items` WHERE `shop_id`=?;"
-    const output = await getAllListData(req,req.body.id)
+    const output = await getAllListData(req, req.body.id)
     output.rows.forEach(i => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
         if (i.food_cate == 1) {
@@ -1015,7 +1002,7 @@ router.post('/getTogoOrder', async (req, res) => {
     const shop_id = req.body.id
     // console.log(shop_id)
 
-    const sql = "SELECT `order`.`sid`,`status`,`shop_id`,`amount`,`memo`,`order`.`create_at`,`food_id`,`order_item`,`order_num`,`price` FROM `order` JOIN `order_detail` ON `order`.`sid` = `order_detail`.`order_id` WHERE  `order`.`shop_id`=? ORDER BY sid DESC"
+    const sql = "SELECT `order`.`sid`,`status`,`shop_id`,`amount`,`order`.`create_at`,`food_id`,`order_item`,`order_num`,`price` FROM `order` JOIN `order_detail` ON `order`.`sid` = `order_detail`.`order_id` WHERE  `order`.`shop_id`=? ORDER BY sid DESC"
 
     const [rows] = await db.query(sql, [shop_id])
 
@@ -1028,21 +1015,21 @@ router.post('/getTogoOrder', async (req, res) => {
 
     const orderList = []
     rows.map((v) => {
-        if(!orderList.includes(v.sid)) orderList.push(v.sid)
+        if (!orderList.includes(v.sid)) orderList.push(v.sid)
     })
-    const orders = orderList.map((v)=>{
+    const orders = orderList.map((v) => {
         const order_detail = []
-        for(let i = 0; i < rows.length; i++){
-            if(rows[i].sid === v){
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].sid === v) {
                 order_detail.push(rows[i])
             }
         }
-        return {order_sid:v,order_detail:order_detail}
+        return { order_sid: v, order_detail: order_detail }
     })
-    console.log('------orders------')
-    console.log(orders)
-    console.log('------orders------')
-    res.json({orders})
+    // console.log('------orders------')
+    // console.log(orders)
+    // console.log('------orders------')
+    res.json({ orders })
 
 
     let order_items = []
@@ -1446,20 +1433,6 @@ router.put('/:food_id', async (req, res) => {
         data: null,
     }
 
-    let foodCate = 0
-    if (req.body.food_cate === '開胃菜') {
-        foodCate = 1
-    } else if (req.body.food_cate === '主餐') {
-        foodCate = 2
-    } else if (req.body.food_cate === '甜點') {
-        foodCate = 3
-    } else if (req.body.food_cate === '飲料') {
-        foodCate = 4
-    } else if (req.body.food_cate === '湯品') {
-        foodCate = 5
-    }
-    req.body.food_cate = foodCate
-
     const food_id = parseInt(req.params.food_id) // 100
 
     // 先找到那筆資料
@@ -1471,10 +1444,30 @@ router.put('/:food_id', async (req, res) => {
         res.json(output)
     }
 
+    // const { photo, name, description, food_cate, price, note } = req.body;
+    //const { food_cate } = req.body;
+
+    let food_cate = 0
+    if (req.body.food_cate === '開胃菜') {
+        food_cate = 1
+    } else if (req.body.food_cate === '主餐') {
+        food_cate = 2
+    } else if (req.body.food_cate === '甜點') {
+        food_cate = 3
+    } else if (req.body.food_cate === '飲料') {
+        food_cate = 4
+    } else if (req.body.food_cate === '湯品') {
+        food_cate = 5
+    }
+
+    // console.log(req.body)
+
     // 有資料的話，用req.body傳過來的東西以展開運算子更新
-    const newData = { ...rows[0], ...req.body, }
-    const sql2 = `UPDATE \`food_items\` SET ? WHERE food_id=?`
-    const [result] = await db.query(sql2, [newData, food_id])
+    const { create_time, ...orgin } = { ...rows[0] }
+    const newData = { ...orgin, ...req.body, food_cate: food_cate }
+    console.log(JSON.stringify(newData))
+    const sql3 = "UPDATE `food_items` SET `food_img` = ?, `food_cate` = ?, `food_title` = ?, `food_des` = ?, `food_price` = ?, `food_note` = ? WHERE food_id=?"
+    const [result] = await db.query(sql3, [newData.food_img, newData.food_cate, newData.food_title, newData.food_des, newData.food_price, newData.food_note, food_id])
 
     // console.log(result)
 
@@ -1494,15 +1487,15 @@ router.post('/getShopData', async (req, res) => {
 
     const [rows] = await db.query(sql, [shop_id])
 
-    console.log('-------------rows------------------')
-    console.log(rows)
-    console.log('-------------rows------------------')
+    // console.log('-------------rows------------------')
+    // console.log(rows)
+    // console.log('-------------rows------------------')
 
     const result = rows[0]
 
     const phone = result.phone
     result.phone = '0' + String(phone)
-    console.log(result)
+    // console.log(result)
 
     let res_cate = '';
     if (result.category == 1) {
@@ -1650,10 +1643,10 @@ router.post('/res-setting-password', async (req, res) => {
     let newPassword = req.body.newPassword
     const getShopSQL = "SELECT * FROM `shops` WHERE sid=?"
     const [getShop] = await db.query(getShopSQL, [resId])
-    console.log(getShop)
+    // console.log(getShop)
 
     const verify = await bcrypt.compare(req.body.oldPassword, getShop[0].password);
-    console.log(verify);
+    // console.log(verify);
 
     if (!verify) {
         console.log('密碼驗證不符')

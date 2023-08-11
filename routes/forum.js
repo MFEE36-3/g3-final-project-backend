@@ -9,7 +9,7 @@ const multer = require("multer");
 
 // 取得所有留言及論壇資料的路由
 router.get("/", async (req, res) => {
-  console.log(req.query.forum_keyword);
+
   try {
     const query = "SELECT * FROM forum;";
     const [result, fields] = await db.query(query);
@@ -64,6 +64,7 @@ router.post("/add", forumUploadImg.single("preImg"), async (req, res) => {
     photo = req.file.filename;
   }
   const { header, content, user_id } = req.body;
+  if (header === '' || content === '' || user_id === null) return;
   // 將文章資料插入到資料庫中
   const sql = `
     INSERT INTO forum (header, content, photo, user_id, publishedTime)
@@ -163,7 +164,10 @@ router.post("/get-member-collect", async (req, res) => {
   res.json(row);
 });
 
-router.get("/message", async (req, res) => {
+router.post("/message", async (req, res) => {
+
+  const { sid } = req.body;
+
   let output = {
     totalRows: 0,
     perPage: 10, // 每頁顯示的文章筆數
@@ -246,14 +250,14 @@ LEFT JOIN (
 LEFT JOIN (
   SELECT forum_sid AS like_it
   FROM forum_like
-  WHERE user_id = 1
+  WHERE user_id = ?
 ) ll ON f.forum_sid = ll.like_it
  ${where}
  ${order}
  LIMIT ${offset}, ${limit}
 `;
 
-  const [article] = await db.query(sql);
+  const [article] = await db.query(sql, [sid]);
   output.article = article;
 
   // let searchResult = [];

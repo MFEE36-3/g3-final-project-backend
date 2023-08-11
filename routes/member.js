@@ -345,7 +345,7 @@ router.get("/walletRecord", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT * FROM member_wallet_record WHERE member_id=?`;
+    const sql = `SELECT * FROM member_wallet_record WHERE member_id=? ORDER BY add_time DESC`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);

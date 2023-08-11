@@ -1446,23 +1446,37 @@ router.put('/:food_id', async (req, res) => {
         data: null,
     }
 
+    let foodCate = 0
+    if (req.body.food_cate === '開胃菜') {
+        foodCate = 1
+    } else if (req.body.food_cate === '主餐') {
+        foodCate = 2
+    } else if (req.body.food_cate === '甜點') {
+        foodCate = 3
+    } else if (req.body.food_cate === '飲料') {
+        foodCate = 4
+    } else if (req.body.food_cate === '湯品') {
+        foodCate = 5
+    }
+    req.body.food_cate = foodCate
+
     const food_id = parseInt(req.params.food_id) // 100
 
     // 先找到那筆資料
     const sql = `SELECT * FROM food_items WHERE food_id=?`
     const [rows] = await db.query(sql, [food_id])
-    // console.log(rows) // array
+    console.log(rows) // array
     if (!rows.length) {
         output.error = '沒有該筆資料'
         res.json(output)
     }
 
     // 有資料的話，用req.body傳過來的東西以展開運算子更新
-    const newData = { ...rows[0], ...req.body }
+    const newData = { ...rows[0], ...req.body, }
     const sql2 = `UPDATE \`food_items\` SET ? WHERE food_id=?`
     const [result] = await db.query(sql2, [newData, food_id])
 
-    console.log(result)
+    // console.log(result)
 
     output.data = result
 

@@ -255,6 +255,26 @@ router.post("/add", upload.single("photo"), async (req, res) => {
         FROM member_info mi
         WHERE mi.account = ? `;
     await db.query(sql2, [req.body.account]);
+
+
+    // 從這裡開始插優惠券
+    // 獲取最新的insert值
+    const member_id = result.insertId;
+
+    const sql3 = `INSERT INTO user_coupon
+    (member_id,coupon_sid,coupon_status_sid,coupon_get_time,coupon_dead_time)
+    VALUES(?,?,?,NOW(),?)`;
+
+    const last_day = dayjs(Date.now()).add(30, 'day').format('YYYY-MM-DD');
+
+    const [result2] = await db.query(sql3, [
+        member_id,
+        1,
+        1,
+        last_day,
+    ])
+
+
     res.json({
         result,
         postData: req.body,
@@ -325,7 +345,7 @@ router.get("/walletRecord", async (req, res) => {
         return res.json(output);
     }
 
-    const sql = `SELECT * FROM member_wallet_record WHERE member_id=?`;
+    const sql = `SELECT * FROM member_wallet_record WHERE member_id=? ORDER BY add_time DESC`;
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);

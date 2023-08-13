@@ -40,6 +40,15 @@ module.exports = (sequelize, Sequelize) => {
         achieve: {
             type: Sequelize.STRING,
         },
+        dead_time: {
+            type: Sequelize.DATE,
+        },
+        google_uid: {
+            type: Sequelize.STRING,
+        },
+        photo_url: {
+            type: Sequelize.STRING,
+        },
     }, {
         freezeTableName: true,
         timestamps: false,

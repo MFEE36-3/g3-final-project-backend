@@ -10,6 +10,8 @@ module.exports = (sequelize, Sequelize) => {
   shopDb.orderdetail = require("./orderdetail.model.js")(sequelize, Sequelize);
   shopDb.payments = require("./payments.model.js")(sequelize, Sequelize);
   shopDb.addresses = require("./addresses.model.js")(sequelize, Sequelize);
+  shopDb.food_orders = require("./order.model.js")(sequelize, Sequelize);
+  shopDb.food_order_detail = require("./order_detail.model.js")(sequelize, Sequelize);
 
 
   // define the associations

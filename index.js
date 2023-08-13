@@ -132,16 +132,17 @@ app.post("/res-login", async (req, res) => {
   const [rows] = await db.query(sql, [req.body.account]);
   console.log(rows);
 
-  console.log(req.body.password);
-  console.log(rows[0].password);
-  const verify = await bcrypt.compare(req.body.password, rows[0].password);
-  console.log(verify);
+  // console.log(req.body.password);
+  // console.log(rows[0].password);
 
   if (!rows.length) {
       output.error = "帳號或密碼錯誤";
       return res.json(output);
   }
   output.message = "有此帳號";
+
+  const verify = await bcrypt.compare(req.body.password, rows[0].password);
+  console.log(verify);
 
   // const verify = false;
   // if(bcrypt.compareSync(req.body.password,rows[0].password))
@@ -165,6 +166,7 @@ app.post("/res-login", async (req, res) => {
           id: rows[0].sid,
           account: rows[0].account,
           shop: rows[0].shop,
+          photo:rows[0].photo,
           token,
       };
       return res.json(output);

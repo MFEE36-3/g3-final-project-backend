@@ -525,7 +525,7 @@ router.get("/foodRecord", async (req, res) => {
     }
 
     const sql =
-        "SELECT `order`.* , `shops`.shop FROM `order` JOIN `shops` ON `order`.shop_id = `shops`.sid WHERE `order`.id = ?";
+        "SELECT `order`.* , `shops`.shop FROM `order` JOIN `shops` ON `order`.shop_id = `shops`.sid WHERE `order`.sid = ?";
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);
@@ -564,7 +564,7 @@ router.post("/finishBooking", async (req, res) => {
 router.post("/finishFood", async (req, res) => {
     const { sid } = req.body;
     const t_sql = "UPDATE `order` SET status = ? WHERE sid = ?";
-    const [rows] = await db.query(t_sql, ["已完成", sid]);
+    const [rows] = await db.query(t_sql, [1, sid]);
     res.json(rows);
 });
 

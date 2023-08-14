@@ -91,12 +91,29 @@ router.post("/googlelogin", async (req, res) => {
             creat_at
             ) VALUES (
                 ?,?,?,?,NOW())`;
-        await db.query(sql2, [
+        const [result] = await db.query(sql2, [
             req.body.email,
             req.body.displayName,
             req.body.uid,
             req.body.photoURL,
         ]);
+
+        // 獲取最新的insert值
+        const member_id = result.insertId;
+        // 從這裡開始插優惠券
+        const sql5 = `INSERT INTO user_coupon
+                (member_id,coupon_sid,coupon_status_sid,coupon_get_time,coupon_dead_time)
+                VALUES(?,?,?,NOW(),?)`;
+
+        const last_day = dayjs(Date.now()).add(30, 'day').format('YYYY-MM-DD');
+
+        const [result2] = await db.query(sql5, [
+            member_id,
+            1,
+            1,
+            last_day,
+        ])
+        
         const sql3 = `SELECT * FROM member_info WHERE google_uid = ? `;
         const [rows2] = await db.query(sql3, [req.body.uid]);
 
@@ -122,6 +139,7 @@ router.post("/googlelogin", async (req, res) => {
             length: 4,
             token,
         };
+
         res.json(output);
     }
 });

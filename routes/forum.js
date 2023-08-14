@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
         OR content LIKE ${kw_escaped}
       `;
       const [searchResult] = await db.query(searchSql);
-      console.log(searchResult);
+      //console.log(searchResult);
 
       // 查詢所有留言資料及論壇資料
       const sql = `
@@ -46,7 +46,7 @@ router.get("/", async (req, res) => {
       return res.json(result);
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
+    //console.error("Error fetching data:", error);
     return res
       .status(500)
       .json({ error: "從 forum 表格獲取數據失敗", message: error.message });
@@ -58,7 +58,7 @@ router.post("/add", forumUploadImg.single("preImg"), async (req, res) => {
   let output = {
     success: true,
   };
-  console.log(req.file);
+  //console.log(req.file);
   let photo = "";
   if (req.file && req.file.filename) {
     photo = req.file.filename;
@@ -73,7 +73,7 @@ router.post("/add", forumUploadImg.single("preImg"), async (req, res) => {
     await db.query(sql, [header, content, photo, user_id]);
     return res.json(output);
   } catch (error) {
-    console.error(error);
+    //console.error(error);
     output.success = false;
     return res.json(output);
   }
@@ -175,14 +175,14 @@ router.post("/message", async (req, res) => {
     page: 1,
     article: [],
   };
-  console.log(req.query.forum_keyword);
+  //console.log(req.query.forum_keyword);
 
   let where = " where 1 ";
   let order = "";
 
   const keyword = req.query.forum_keyword || "";
   const orderBy = req.query.forum_orderBy || "";
-  console.log(orderBy);
+  //console.log(orderBy);
   const page = parseInt(req.query.forum_page) || 1;
   const limit = 100;
   const offset = (page - 1) * limit;
@@ -268,7 +268,7 @@ LEFT JOIN (
   output.totalRows = totalRows[0].totalRows;
   output.totalPages = Math.ceil(output.totalRows / limit);
   res.json(output);
-  console.log(output);
+  //console.log(output);
 });
 
 // 在留言拿到使用者頭像
@@ -305,8 +305,8 @@ router.post("/handle-like-list", async (req, res) => {
   const member_sid = req.body.member_id;
   const article_sid = req.body.arr[0].forum_sid;
   const body = req.body;
-  console.log({ member_sid, article_sid });
-  console.log(body);
+  //console.log({ member_sid, article_sid });
+  //console.log(body);
   // clickHeart == true:要新增收藏
   if (clickHeart) {
     const checkSQL =
@@ -321,14 +321,14 @@ router.post("/handle-like-list", async (req, res) => {
       const insertSQL =
         "INSERT INTO `forum_like`(`user_id`, `forum_sid`) VALUES (?,?)";
       const [result] = await db.query(insertSQL, [member_sid, article_sid]);
-      console.log("insert : " + result);
+      //console.log("insert : " + result);
     }
   } else {
     // clickHeart == false:要移除收藏
     const deleteSQL =
       "DELETE FROM `forum_like` WHERE user_id=? AND forum_sid=?;";
     const [row] = await db.query(deleteSQL, [member_sid, article_sid]);
-    console.log("delete row : " + row);
+    //console.log("delete row : " + row);
   }
 
   res.json(req.body);
@@ -353,14 +353,14 @@ router.post("/handle-collect-list", async (req, res) => {
       const insertSQL =
         "INSERT INTO `forum_favorite`(`member_sid`, `forum_sid`, `date`) VALUES (?,?,NOW())";
       const [result] = await db.query(insertSQL, [member_sid, article_sid]);
-      console.log("insert : " + result);
+      //console.log("insert : " + result);
     }
   } else {
     // clickHeart == false:要移除收藏
     const deleteSQL =
       "DELETE FROM `forum_favorite` WHERE member_sid=? AND forum_sid=?;";
     const [row] = await db.query(deleteSQL, [member_sid, article_sid]);
-    console.log("delete row : " + row);
+    //console.log("delete row : " + row);
   }
 
   res.json(req.body);
@@ -413,7 +413,7 @@ date DESC`;
       v.date = res.toDateString(v.date);
     });
   }
-  console.log(likeDatas);
+  //console.log(likeDatas);
   output = {
     ...output,
     likeDatas,
@@ -445,7 +445,7 @@ router.delete("/likelist/:rid", async (req, res) => {
     const [result] = await db.query(sql_deleteLikeList);
     res.json({ ...result });
   } catch (error) {
-    console.log(error);
+    //console.log(error);
     res.status(500).json({ error: "An error occurred" });
   }
 });
@@ -500,7 +500,7 @@ router.delete("/forum/:rid", async (req, res) => {
     const [result] = await db.query(sql_deleteForum);
     res.json({ ...result });
   } catch (error) {
-    console.log(error);
+    //console.log(error);
     res.status(500).json({ error: "An error occurred" });
   }
 });

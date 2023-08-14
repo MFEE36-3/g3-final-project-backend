@@ -134,7 +134,7 @@ router.get("/", async (req, res) => {
         data: null,
     };
     if (!res.locals.jwtData) {
-        console.log("step1");
+        //console.log("step1");
         output.error = "沒有 token 驗證";
         return res.json(output);
     }
@@ -180,7 +180,7 @@ router.post("/", async (req, res) => {
             res.json({ success: true });
         }
     } catch (error) {
-        console.error(error);
+        //console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -193,13 +193,13 @@ router.get("/moneyCard", async (req, res) => {
         data: null,
     };
     if (!res.locals.jwtData) {
-        console.log("step1");
+        //console.log("step1");
         output.error = "沒有 token 驗證";
         return res.json(output);
     }
     const sql = `SELECT * FROM member_level_card WHERE 1`;
     const [rows] = await db.query(sql);
-    console.log(rows);
+    //console.log(rows);
     res.json(rows);
 });
 

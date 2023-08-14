@@ -28,19 +28,19 @@ const getListData = async (req, shop_id) => {
 
     // 在哪一個分頁(?page=...) => 用req.query
     let page = req.query.page ? +req.query.page : 1;
-    console.log('---page---')
-    console.log(page)
-    console.log('---page---')
+    //console.log('---page---')
+    //console.log(page)
+    //console.log('---page---')
 
-    console.log('---shop_id---')
-    console.log(req.query.shop_id)
-    console.log('---shop_id---')
+    //console.log('---shop_id---')
+    //console.log(req.query.shop_id)
+    //console.log('---shop_id---')
 
     // 做搜尋功能:用queryString做
     let keyword = req.query.keyword || '';
-    console.log('---keyword---')
-    console.log(keyword)
-    console.log('---keyword---')
+    //console.log('---keyword---')
+    //console.log(keyword)
+    //console.log('---keyword---')
     // 防範如果page是NaN或0會回傳true
     const baseUrl = req.baseUrl
     if (!page || page < 1) {
@@ -67,9 +67,9 @@ const getListData = async (req, shop_id) => {
     const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
     const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
 
-    console.log('---totalRows---')
-    console.log(totalRows)
-    console.log('---totalRows---')
+    //console.log('---totalRows---')
+    //console.log(totalRows)
+    //console.log('---totalRows---')
 
     let totalPages = 0;
     // 計算有多少頁(假設總筆數totalRows不為0)
@@ -81,9 +81,9 @@ const getListData = async (req, shop_id) => {
             return output
         }
     }
-    console.log('---totalPages---')
-    console.log(totalPages)
-    console.log('---totalPages---')
+    //console.log('---totalPages---')
+    //console.log(totalPages)
+    //console.log('---totalPages---')
     let rows = [];
     // 拿分頁的資料
     const sql = `SELECT * FROM food_items ${where} ORDER BY food_id DESC LIMIT ${perPage * (page - 1)}, ${perPage}`;
@@ -109,19 +109,19 @@ const getAllListData = async (req, shop_id) => {
 
     // 在哪一個分頁(?page=...) => 用req.query
     let page = req.query.page ? +req.query.page : 1;
-    console.log('---page---')
-    console.log(page)
-    console.log('---page---')
+    //console.log('---page---')
+    //console.log(page)
+    //console.log('---page---')
 
-    console.log('---shop_id---')
-    console.log(req.query.shop_id)
-    console.log('---shop_id---')
+    //console.log('---shop_id---')
+    //console.log(req.query.shop_id)
+    //console.log('---shop_id---')
 
     // 做搜尋功能:用queryString做
     let keyword = req.query.keyword || '';
-    console.log('---keyword---')
-    console.log(keyword)
-    console.log('---keyword---')
+    //console.log('---keyword---')
+    //console.log(keyword)
+    //console.log('---keyword---')
     // 防範如果page是NaN或0會回傳true
     const baseUrl = req.baseUrl
     if (!page || page < 1) {
@@ -147,9 +147,9 @@ const getAllListData = async (req, shop_id) => {
     const t_sql = `SELECT COUNT(1) totalRows FROM food_items ${where}`
     const [[{ totalRows }]] = await db.query(t_sql);    // 解構三次
 
-    console.log('---totalRows---')
-    console.log(totalRows)
-    console.log('---totalRows---')
+    //console.log('---totalRows---')
+    //console.log(totalRows)
+    //console.log('---totalRows---')
 
     let totalPages = 0;
     // 計算有多少頁(假設總筆數totalRows不為0)
@@ -161,9 +161,9 @@ const getAllListData = async (req, shop_id) => {
             return output
         }
     }
-    console.log('---totalPages---')
-    console.log(totalPages)
-    console.log('---totalPages---')
+    //console.log('---totalPages---')
+    //console.log(totalPages)
+    //console.log('---totalPages---')
     let rows = [];
     // 拿分頁的資料
     const sql = `SELECT * FROM food_items ${where} ORDER BY food_id DESC LIMIT ${perPage * (page - 1)}, ${perPage}`;
@@ -244,13 +244,13 @@ const getListDataASC = async (req, shop_id) => {
 router.post("/shopPreviewImg", resUploadImg.single("preImg"), async (req, res) => {
     // const filename = req.file.filename
     res.json(req.file);
-    console.log(req.file);
+    //console.log(req.file);
 });
 
 router.post("/foodItemPreviewImg", foodItemUploadImg.single("preImg"), async (req, res) => {
     // const filename = req.file.filename
     res.json(req.file);
-    console.log(req.file);
+    //console.log(req.file);
 });
 
 
@@ -321,7 +321,7 @@ router.post('/sendVerifyCode', async (req, res) => {
     // 寫入後端資料庫
     const sql = "INSERT INTO `otp`(`matchCode`, `otp_code`, `created_at`) VALUES (?,?,NOW())"
     const [result] = await db.query(sql, [matchCode, verifyCode])
-    console.log(result)
+    //console.log(result)
     output.data = result
     output.success = true
     output.matchCode = matchCode
@@ -350,7 +350,7 @@ router.post('/checkVerifyCode', async (req, res) => {
     // 先對照有沒有matchCode的資料
     const matchSQL = "SELECT * FROM `otp` WHERE matchCode=?"
     const [result] = await db.query(matchSQL, [matchCode])
-    console.log(result)
+    //console.log(result)
     // [
     //     {
     //       id: 18,
@@ -596,7 +596,7 @@ router.post('/res-register-form/', resMultipartParser, async (req, res) => {
         // Rollback the transaction on error
         await conn.rollback();
         // Handle any errors
-        console.error(err);
+        //console.error(err);
         res.status(500).json({
             success: false,
             error: 'An error occurred.',
@@ -737,12 +737,12 @@ router.post('/item-management/DESC', async (req, res) => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
     })
 
-    console.log(output)
+    //console.log(output)
     res.json(output)
 })
 // 商品排序:由舊到新
 router.post('/item-management/ASC', async (req, res) => {
-    console.log('getListDataASC')
+    //console.log('getListDataASC')
     const output = await getListDataASC(req, parseInt(req.body.id));
     if (output.redirect) {
         return res.redirect(output.redirect)
@@ -752,7 +752,7 @@ router.post('/item-management/ASC', async (req, res) => {
         i.create_time = dayjs(i.create_time).format('YYYY-MM-DD HH:mm:ss')
     })
 
-    console.log(output)
+    //console.log(output)
     res.json(output)
 })
 
@@ -779,9 +779,9 @@ router.get('/item-management/editItem/:food_id', async (req, res) => {
     const sql = `SELECT * FROM food_items WHERE food_id=?`
     const [result] = await db.query(sql, [food_id])
 
-    console.log('------result-------')
-    console.log(result)
-    console.log('------result-------')
+    //console.log('------result-------')
+    //console.log(result)
+    //console.log('------result-------')
 
 
     if (!result.length) {
@@ -916,7 +916,7 @@ router.post('/getShopOrder', async (req, res) => {
     const [rows] = await db.query(sql, [parseInt(req.body.id)])      // rows:array
     const [rows1] = await db.query(sql1, [parseInt(req.body.id)])    // rows1:array
 
-    console.log(rows1)
+    //console.log(rows1)
     for (item of rows1) {
         item.meet_time = dayjs(item.meet_time).format('YYYY-MM-DD HH:mm:ss')
     }
@@ -1444,7 +1444,7 @@ router.put('/:food_id', async (req, res) => {
     // 先找到那筆資料
     const sql = `SELECT * FROM food_items WHERE food_id=?`
     const [rows] = await db.query(sql, [food_id])
-    console.log(rows) // array
+    //console.log(rows) // array
     if (!rows.length) {
         output.error = '沒有該筆資料'
         res.json(output)

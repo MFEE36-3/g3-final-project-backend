@@ -9,7 +9,7 @@ const Member = db.member;
 exports.linepay_topup = async (req, res) => {
     const { amount } = req.body;
     const member_id = res.locals.jwtData.id;
-    const transaction = await db.sequelize.transaction();
+    // const transaction = await db.sequelize.transaction();
 
     try {
         const member = await Member.member_info.findOne({
@@ -29,9 +29,11 @@ exports.linepay_topup = async (req, res) => {
             member_id: member_id,
             amount: amount,
             content: `儲值 ${amount} 元`,
-        }, {
-            transaction
-        });
+        }, 
+        // {
+        //     transaction
+        // }
+        );
 
         const total_price_discount = amount;
         const flat_products = {
@@ -66,15 +68,17 @@ exports.linepay_topup = async (req, res) => {
             where: {
                 sid: member_id
             }
-        }, { transaction });
+        }, 
+        // { transaction }
+        );
 
-        await transaction.commit();
+        // await transaction.commit();
         res.status(200).send({
             message: "Order created successful!",
             linepay_redirect: linepayRedirect
         });
     } catch (error) {
-        await transaction.rollback();
+        // await transaction.rollback();
         return res.status(500).json({
             success: false,
             error: error.message
@@ -85,7 +89,7 @@ exports.linepay_topup = async (req, res) => {
 exports.easy_topup = async (req, res) => {
     const { amount } = req.body;
     const member_id = res.locals.jwtData.id;
-    const transaction = await db.sequelize.transaction();
+    // const transaction = await db.sequelize.transaction();
 
     try {
         const member = await Member.member_info.findOne({
@@ -105,9 +109,11 @@ exports.easy_topup = async (req, res) => {
             member_id: member_id,
             amount: amount,
             content: `儲值 ${amount} 元`,
-        }, {
-            transaction
-        });
+        }, 
+        // {
+        //     transaction
+        // }
+        );
 
         await Member.member_info.update({
             wallet: member.wallet + amount
@@ -115,15 +121,17 @@ exports.easy_topup = async (req, res) => {
             where: {
                 sid: member_id
             }
-        }, { transaction });
+        }, 
+        // { transaction }
+        );
 
-        await transaction.commit();
+        // await transaction.commit();
         return res.status(200).json({
             success: true,
             message: "儲值成功"
         });
     } catch (error) {
-        await transaction.rollback();
+        // await transaction.rollback();
         return res.status(500).json({
             success: false,
             error: error.message
@@ -134,7 +142,7 @@ exports.easy_topup = async (req, res) => {
 exports.premiumUpgrade = async (req, res) => {
     const { sid } = req.body;
     const member_id = res.locals.jwtData.id;
-    const transaction = await db.sequelize.transaction();
+    // const transaction = await db.sequelize.transaction();
 
     try {
         const member = await Member.member_info.findOne({
@@ -164,7 +172,9 @@ exports.premiumUpgrade = async (req, res) => {
             member_id: member_id,
             amount: -(member_level_card.price),
             content: `購買 ${member_level_card.name}`,
-        },{ transaction });
+        },
+        // { transaction }
+        );
 
         await Member.member_info.update({
             wallet: member.wallet - member_level_card.price,
@@ -174,16 +184,18 @@ exports.premiumUpgrade = async (req, res) => {
             where: {
                 sid: member_id
             }
-        }, { transaction });
+        }, 
+        // { transaction }
+        );
 
-        await transaction.commit();
+        // await transaction.commit();
         return res.status(200).json({
             success: true,
             message: "升級成功"
         });
     }
     catch (error) {
-        await transaction.rollback();
+        // await transaction.rollback();
         return res.status(500).json({
             success: false,
             error: error.message

@@ -539,7 +539,7 @@ router.get("/foodRecord", async (req, res) => {
     }
 
     const sql =
-        "SELECT `order`.* , `shops`.shop FROM `order` JOIN `shops` ON `order`.shop_id = `shops`.sid WHERE `order`.sid = ?";
+        "SELECT `order`.* , `shops`.shop FROM `order` JOIN `shops` ON `order`.shop_id = `shops`.sid WHERE `order`.id = ?";
 
     const [rows] = await db.query(sql, [res.locals.jwtData.id]);
     res.json(rows);

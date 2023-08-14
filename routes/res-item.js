@@ -607,6 +607,12 @@ router.post('/res-register-form/', resMultipartParser, async (req, res) => {
     }
 });
 
+// router.post('/registerData',async(req,res) => {
+//     const sql = "SELECT `sid`, `account`, `shop`,  `photo`  FROM `shops` WHERE shop=?"
+//     const [row] = await db.query(sql,[req.body.shop])
+//     res.json(row)
+// })
+
 
 // 餐廳新增商品
 router.post('/add-item', foodItemMultipartParser, async (req, res) => {
@@ -1032,83 +1038,83 @@ router.post('/getTogoOrder', async (req, res) => {
     res.json({ orders })
 
 
-    let order_items = []
-    rows.map((v, i) => {
-        order_items.push(v.order_item)
-    })
-    // console.log(order_items)
-    // console.log('rowssssssssssssssssss')
-    // console.log(rows)
-    // console.log('rowssssssssssssssssss')
-    let output_info = []
-    for (let i = 1; i < rows.length; i++) {
-        if (rows[i].sid == rows[i - 1].sid) {
-            output_info.push({
-                sid: rows[i].sid,
-                status: rows[i].status,
-                order_item: [rows[i].order_items]
-            })
-        }
-    }
+    // let order_items = []
+    // rows.map((v, i) => {
+    //     order_items.push(v.order_item)
+    // })
+    // // console.log(order_items)
+    // // console.log('rowssssssssssssssssss')
+    // // console.log(rows)
+    // // console.log('rowssssssssssssssssss')
+    // let output_info = []
+    // for (let i = 1; i < rows.length; i++) {
+    //     if (rows[i].sid == rows[i - 1].sid) {
+    //         output_info.push({
+    //             sid: rows[i].sid,
+    //             status: rows[i].status,
+    //             order_item: [rows[i].order_items]
+    //         })
+    //     }
+    // }
 
-    const uniqueObjects = output_info.reduce((accumulator, currentValue) => {
-        if (!accumulator[currentValue.sid]) {
-            accumulator[currentValue.sid] = currentValue;
-        }
-        return accumulator;
-    }, {});
+    // const uniqueObjects = output_info.reduce((accumulator, currentValue) => {
+    //     if (!accumulator[currentValue.sid]) {
+    //         accumulator[currentValue.sid] = currentValue;
+    //     }
+    //     return accumulator;
+    // }, {});
 
-    const result = Object.values(uniqueObjects);
-    // console.log('----------------------------------------')
-    // console.log(result);
-    // console.log('----------------------------------------')
-    const groupedOrderItems = rows.reduce((accumulator, currentValue) => {
-        const { sid, order_item, order_num, amount, price, status, create_at } = currentValue;
-        if (!accumulator[sid]) {
-            accumulator[sid] = [{ order_item, order_num, amount, price, status, sid, create_at }];
-        } else {
-            accumulator[sid].push({ order_item, order_num, amount, price, status, sid, create_at });
-        }
-        return accumulator;
-    }, {});
+    // const result = Object.values(uniqueObjects);
+    // // console.log('----------------------------------------')
+    // // console.log(result);
+    // // console.log('----------------------------------------')
+    // const groupedOrderItems = rows.reduce((accumulator, currentValue) => {
+    //     const { sid, order_item, order_num, amount, price, status, create_at } = currentValue;
+    //     if (!accumulator[sid]) {
+    //         accumulator[sid] = [{ order_item, order_num, amount, price, status, sid, create_at }];
+    //     } else {
+    //         accumulator[sid].push({ order_item, order_num, amount, price, status, sid, create_at });
+    //     }
+    //     return accumulator;
+    // }, {});
 
-    // console.log('-----groupedOrderItems-----')
-    // console.log(groupedOrderItems);
-    // console.log('-----groupedOrderItems-----')
+    // // console.log('-----groupedOrderItems-----')
+    // // console.log(groupedOrderItems);
+    // // console.log('-----groupedOrderItems-----')
 
-    let order_amount = []
-    rows.map((v, i) => {
-        order_amount.push(v.order_num)
-    })
-    // console.log(order_amount)
+    // let order_amount = []
+    // rows.map((v, i) => {
+    //     order_amount.push(v.order_num)
+    // })
+    // // console.log(order_amount)
 
-    let order_price = []
-    rows.map((v, i) => {
-        order_price.push(v.price)
-    })
+    // let order_price = []
+    // rows.map((v, i) => {
+    //     order_price.push(v.price)
+    // })
 
-    // console.log(order_price)
+    // // console.log(order_price)
 
-    // console.log('分隔線')
-    const outputResult = result.map((v, i) => {
-        if (rows[i].sid == v.sid) {
-            return { ...result, order_items: order_items }
-        }
-    })
-    // console.log('分隔線123')
-    // console.log(outputResult)
-    // console.log('分隔線123')
+    // // console.log('分隔線')
+    // const outputResult = result.map((v, i) => {
+    //     if (rows[i].sid == v.sid) {
+    //         return { ...result, order_items: order_items }
+    //     }
+    // })
+    // // console.log('分隔線123')
+    // // console.log(outputResult)
+    // // console.log('分隔線123')
 
-    const order_output_all = []
-    const order_output = {}
-    order_output.order_item = order_items;
-    order_output.order_amount = order_amount;
-    order_output.price = order_price
-    order_output.sid = rows[0].sid;
-    order_output.shop_id = rows[0].shop_id;
-    order_output.amount = rows[0].amount;
-    order_output.status = rows[0].status;
-    order_output.create_at = rows[0].create_at
+    // const order_output_all = []
+    // const order_output = {}
+    // order_output.order_item = order_items;
+    // order_output.order_amount = order_amount;
+    // order_output.price = order_price
+    // order_output.sid = rows[0].sid;
+    // order_output.shop_id = rows[0].shop_id;
+    // order_output.amount = rows[0].amount;
+    // order_output.status = rows[0].status;
+    // order_output.create_at = rows[0].create_at
     // console.log(order_output)
     // console.log(row)
     // [
@@ -1162,18 +1168,18 @@ router.post('/getTogoOrder', async (req, res) => {
     //     }
     //   ]
 
-    output.order = [rows]
-    output.order_item = order_items
-    output.order_amount = order_amount
+    // output.order = [rows]
+    // output.order_item = order_items
+    // output.order_amount = order_amount
 
-    order_output.groupedOrderItems = Object.values(groupedOrderItems);
+    // order_output.groupedOrderItems = Object.values(groupedOrderItems);
 
 
-    // console.log(order_output.groupedOrderItems.length)  // 118
+    // // console.log(order_output.groupedOrderItems.length)  // 118
 
-    const perPage = 10
-    const totalPages = Math.ceil(order_output.groupedOrderItems.length / perPage)
-    order_output.totalPages = totalPages
+    // const perPage = 10
+    // const totalPages = Math.ceil(order_output.groupedOrderItems.length / perPage)
+    // order_output.totalPages = totalPages
     // console.log(totalPages)
     // res.json(order_output)
 })

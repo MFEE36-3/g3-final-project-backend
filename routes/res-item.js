@@ -1500,7 +1500,7 @@ router.post('/getShopData', async (req, res) => {
     const result = rows[0]
 
     const phone = result.phone
-    result.phone = '0' + String(phone)
+    //result.phone = '0' + String(phone)
     // console.log(result)
 
     let res_cate = '';

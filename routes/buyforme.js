@@ -306,9 +306,14 @@ router.post('/setbuyforme', async (req, res) => {
     // 獲取最新的insert值
     const order_sid = result[0].insertId;
 
+    const temp_total_arr = []
+
     const [result2] = await Promise.all(
 
         order_detail.map(async (v) => {
+
+            temp_total_arr.push(v.food_quantity * v.food_price);
+
             const response = await db.query(sql2, [
                 order_sid,
                 v.food_id,
@@ -320,6 +325,12 @@ router.post('/setbuyforme', async (req, res) => {
             return ResultSetHeader.affectedRows;
         })
     )
+
+    //回頭更新訂單總金額
+    const sum = temp_total_arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+
+    const sql3 = `UPDATE buy_for_me SET order_amount = order_amount + ? WHERE order_sid = ?`;
+    const result3 = await db.query(sql3, [sum, order_sid]);
 
     res.json({
         result,
